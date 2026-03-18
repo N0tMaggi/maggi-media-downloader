@@ -1,0 +1,42 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="640" rx="32" fill="#0F172A"/>
+  <rect x="32" y="32" width="1216" height="576" rx="28" fill="url(#bg)"/>
+  <rect x="72" y="76" width="360" height="488" rx="28" fill="#F8FAFC" fill-opacity="0.96"/>
+  <rect x="104" y="118" width="210" height="20" rx="10" fill="#0F172A"/>
+  <rect x="104" y="154" width="260" height="14" rx="7" fill="#94A3B8"/>
+  <rect x="104" y="206" width="296" height="128" rx="20" fill="#E2E8F0"/>
+  <rect x="124" y="226" width="72" height="92" rx="14" fill="url(#thumb)"/>
+  <rect x="214" y="230" width="124" height="16" rx="8" fill="#0F172A"/>
+  <rect x="214" y="258" width="148" height="12" rx="6" fill="#64748B"/>
+  <rect x="214" y="286" width="110" height="12" rx="6" fill="#64748B"/>
+  <rect x="104" y="362" width="88" height="42" rx="14" fill="#111827"/>
+  <rect x="206" y="362" width="88" height="42" rx="14" fill="#111827"/>
+  <rect x="308" y="362" width="88" height="42" rx="14" fill="#111827"/>
+  <rect x="104" y="420" width="296" height="48" rx="14" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/>
+  <rect x="474" y="88" width="738" height="180" rx="28" fill="#08111F" fill-opacity="0.72" stroke="#334155"/>
+  <text x="520" y="148" fill="#F8FAFC" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">TikTok Downloader</text>
+  <text x="520" y="190" fill="#CBD5E1" font-family="Segoe UI, Arial, sans-serif" font-size="18">MV3 extension with background, content script, popup, options,</text>
+  <text x="520" y="218" fill="#CBD5E1" font-family="Segoe UI, Arial, sans-serif" font-size="18">cache, provider adapter, live updates, and downloads.</text>
+  <rect x="474" y="302" width="350" height="224" rx="28" fill="#08111F" fill-opacity="0.72" stroke="#334155"/>
+  <rect x="862" y="302" width="350" height="224" rx="28" fill="#08111F" fill-opacity="0.72" stroke="#334155"/>
+  <text x="510" y="350" fill="#F8FAFC" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">Runtime</text>
+  <text x="510" y="390" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Background service worker</text>
+  <text x="510" y="420" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Content-script page detection</text>
+  <text x="510" y="450" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Popup with live updates</text>
+  <text x="510" y="480" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Options and persisted defaults</text>
+  <text x="898" y="350" fill="#F8FAFC" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">Core Modules</text>
+  <text x="898" y="390" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Provider adapter</text>
+  <text x="898" y="420" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Typed messages</text>
+  <text x="898" y="450" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Storage and cache</text>
+  <text x="898" y="480" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Theme, filenames, TikTok utils</text>
+  <defs>
+    <linearGradient id="bg" x1="56" y1="56" x2="1224" y2="584" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827"/>
+      <stop offset="1" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="thumb" x1="124" y1="226" x2="196" y2="318" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FB7185"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+</svg>

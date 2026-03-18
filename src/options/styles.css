@@ -1,0 +1,145 @@
+:root {
+  --page-bg:
+    radial-gradient(circle at top left, rgba(255, 145, 77, 0.32), transparent 24%),
+    linear-gradient(180deg, #f8fbf4 0%, #e6f0e2 100%);
+  --text-color: #122019;
+  --surface-bg: rgba(255, 255, 255, 0.88);
+  --surface-border: rgba(18, 32, 25, 0.08);
+  --surface-shadow: 0 22px 60px rgba(18, 32, 25, 0.1);
+  --muted-color: #53645a;
+  --input-bg: #ffffff;
+  --input-border: rgba(18, 32, 25, 0.16);
+  --toggle-bg: rgba(18, 32, 25, 0.04);
+  --secondary-bg: #edf3ea;
+  --secondary-text: #18241c;
+  font-family: "Bahnschrift", "Segoe UI Variable Display", "Trebuchet MS", sans-serif;
+  color: var(--text-color);
+  background: var(--page-bg);
+}
+
+:root[data-theme="dark"] {
+  --page-bg:
+    radial-gradient(circle at top left, rgba(245, 158, 11, 0.12), transparent 24%),
+    linear-gradient(180deg, #111827 0%, #0f172a 100%);
+  --text-color: #f9fafb;
+  --surface-bg: rgba(17, 24, 39, 0.92);
+  --surface-border: rgba(148, 163, 184, 0.14);
+  --surface-shadow: 0 22px 60px rgba(0, 0, 0, 0.35);
+  --muted-color: #9ca3af;
+  --input-bg: #111827;
+  --input-border: rgba(148, 163, 184, 0.18);
+  --toggle-bg: rgba(255, 255, 255, 0.04);
+  --secondary-bg: #1f2937;
+  --secondary-text: #f3f4f6;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: transparent;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.page {
+  padding: 40px 24px;
+}
+
+.layout {
+  max-width: 920px;
+  margin: 0 auto;
+  display: grid;
+  gap: 20px;
+}
+
+.hero,
+.card {
+  background: var(--surface-bg);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--surface-border);
+  border-radius: 28px;
+  padding: 24px;
+  box-shadow: var(--surface-shadow);
+}
+
+.hero h1,
+.card h2 {
+  margin: 0 0 10px;
+}
+
+.hero p,
+.card p,
+.hint {
+  color: var(--muted-color);
+  line-height: 1.5;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+label {
+  font-weight: 700;
+}
+
+input[type="text"],
+select {
+  border: 1px solid var(--input-border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  font: inherit;
+  background: var(--input-bg);
+  color: var(--text-color);
+}
+
+.toggle {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  border-radius: 18px;
+  background: var(--toggle-bg);
+  padding: 14px 16px;
+}
+
+.toggle-copy strong {
+  display: block;
+}
+
+.toggle-copy span {
+  color: var(--muted-color);
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+button {
+  border: none;
+  border-radius: 16px;
+  padding: 12px 16px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary {
+  color: #091109;
+  background: linear-gradient(135deg, #f6d365, #f15a29);
+}
+
+.secondary {
+  background: var(--secondary-bg);
+  color: var(--secondary-text);
+}
