@@ -584,18 +584,42 @@ async function resolveUrl(url: string, sourceMode: PopupState["sourceMode"]): Pr
 
 async function loadFromActiveTab(): Promise<void> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const activeUrl = tab?.url || "";
+  if (!tab?.id) {
+    state.sourceMode = "manual";
+    state.sourceUrl = "";
+    state.detectedUrl = "";
+    state.media = null;
+    render();
+    return;
+  }
 
+  // 1. Direct post URL in address bar
+  const activeUrl = tab.url || "";
   if (activeUrl && isTikTokUrl(activeUrl)) {
     state.detectedUrl = activeUrl;
     await resolveUrl(activeUrl, "active-tab");
     return;
   }
 
+  // 2. Actively query the live content script in the active tab!
+  try {
+    const liveResponse = (await chrome.tabs.sendMessage(tab.id, {
+      type: "content/getActivePost",
+    })) as { url?: string } | undefined;
+    if (liveResponse?.url && isTikTokUrl(liveResponse.url)) {
+      state.detectedUrl = liveResponse.url;
+      await resolveUrl(liveResponse.url, "active-tab");
+      return;
+    }
+  } catch {
+    // Content script not ready or page is not TikTok
+  }
+
+  // 3. Fallback to background page context
   const pageContextResponse = await sendMessage<{ context: { normalizedUrl: string } | null }>({
     type: "page/getContext",
   });
-  if (pageContextResponse.context?.normalizedUrl) {
+  if (pageContextResponse.context?.normalizedUrl && isTikTokUrl(pageContextResponse.context.normalizedUrl)) {
     state.detectedUrl = pageContextResponse.context.normalizedUrl;
     await resolveUrl(pageContextResponse.context.normalizedUrl, "active-tab");
     return;
