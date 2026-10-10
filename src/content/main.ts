@@ -23,9 +23,13 @@ async function sendMessage<T>(message: object): Promise<T> {
 }
 
 async function loadSettings(): Promise<void> {
-  const response = await sendMessage<SettingsResponse>({ type: "settings/get" });
-  settings = response.settings;
-  setDebugLogging(settings.debugLogging);
+  try {
+    const response = await sendMessage<SettingsResponse>({ type: "settings/get" });
+    settings = response.settings;
+    setDebugLogging(settings.debugLogging);
+  } catch {
+    // Extension may be reloading
+  }
 }
 
 function removeChip(): void {
@@ -33,21 +37,29 @@ function removeChip(): void {
 }
 
 async function notifyContext(url: string): Promise<void> {
-  await sendMessage({
-    type: "page/contextDetected",
-    context: {
-      url,
-      normalizedUrl: normalizeTikTokUrl(url),
-      contentType: detectTikTokContentType(url),
-      detectedAt: Date.now(),
-    },
-  });
+  try {
+    await sendMessage({
+      type: "page/contextDetected",
+      context: {
+        url,
+        normalizedUrl: normalizeTikTokUrl(url),
+        contentType: detectTikTokContentType(url),
+        detectedAt: Date.now(),
+      },
+    });
+  } catch {
+    // Ignore background unavailability
+  }
 }
 
 async function clearContext(): Promise<void> {
-  await sendMessage({
-    type: "page/contextCleared",
-  });
+  try {
+    await sendMessage({
+      type: "page/contextCleared",
+    });
+  } catch {
+    // Ignore background unavailability
+  }
 }
 
 function getAbsoluteHref(value: string | null): string {

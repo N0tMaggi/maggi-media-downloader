@@ -19,9 +19,11 @@ export function createLogger(scope: string) {
       console.info(format(scope, "INFO", message), ...args);
     },
     warn(message: string, ...args: unknown[]) {
+      if (!debugEnabled) return;
       console.warn(format(scope, "WARN", message), ...args);
     },
     error(message: string, ...args: unknown[]) {
+      if (!debugEnabled) return;
       console.error(format(scope, "ERROR", message), ...args);
     },
   };
