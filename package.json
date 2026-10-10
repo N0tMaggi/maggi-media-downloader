@@ -1,6 +1,6 @@
 {
   "name": "maggi-media-downloader",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "type": "module",
   "description": "Chromium MV3 media downloader extension for TikTok & X with interactive preview deck and typed services",

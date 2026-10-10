@@ -67,7 +67,7 @@ function render(): void {
             </svg>
           </div>
           <div class="title-group">
-            <h1>Maggi Media Downloader <span class="version-pill">v2.1.0</span></h1>
+            <h1>Maggi Media Downloader <span class="version-pill">v2.2.0</span></h1>
             <p>Monochrome high-performance media extractor preferences</p>
           </div>
         </div>
@@ -90,7 +90,7 @@ function render(): void {
               </svg>
               Supported Platforms
             </h2>
-            <p class="card-desc">Current and upcoming extractor endpoints powered by api.maggi.dev</p>
+            <p class="card-desc">Active media extractor endpoints powered by api.maggi.dev</p>
           </div>
 
           <div class="platform-row">
@@ -111,7 +111,7 @@ function render(): void {
                 </svg>
                 <span>X / Twitter (Media Extractor)</span>
               </div>
-              <span class="platform-tag tag-roadmap">Upcoming</span>
+              <span class="platform-tag tag-active">Active</span>
             </div>
           </div>
         </section>

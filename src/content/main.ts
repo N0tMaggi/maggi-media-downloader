@@ -1,5 +1,7 @@
 import { createLogger, setDebugLogging } from "../shared/logger";
-import { detectTikTokContentType, isTikTokUrl, normalizeTikTokUrl } from "../shared/tiktok";
+import { isTikTokUrl } from "../shared/tiktok";
+import { isTwitterUrl, normalizeTwitterUrl } from "../shared/twitter";
+import { detectMediaContentType, isSupportedMediaUrl, normalizeMediaUrl } from "../shared/platforms";
 import type { MessageResponse, SettingsResponse } from "../shared/messages";
 import type { ExtensionSettings, ResolveResult } from "../shared/types";
 
@@ -43,8 +45,8 @@ async function notifyContext(url: string): Promise<void> {
       type: "page/contextDetected",
       context: {
         url,
-        normalizedUrl: normalizeTikTokUrl(url),
-        contentType: detectTikTokContentType(url),
+        normalizedUrl: normalizeMediaUrl(url),
+        contentType: detectMediaContentType(url),
         detectedAt: Date.now(),
       },
     });
@@ -444,9 +446,162 @@ function injectDownloadButtons(): void {
   }
 }
 
+function detectActiveTwitterUrl(): string {
+  if (isTwitterUrl(location.href)) {
+    return normalizeTwitterUrl(location.href);
+  }
+
+  // Check open tweet modal dialog if any
+  const modalTweet = document.querySelector<HTMLElement>(
+    'div[aria-labelledby*="modal-header"] article[data-testid="tweet"], div[role="dialog"] article[data-testid="tweet"]',
+  );
+  if (modalTweet) {
+    const link = modalTweet.querySelector<HTMLAnchorElement>('a[href*="/status/"]');
+    if (link?.href && isTwitterUrl(link.href)) {
+      return normalizeTwitterUrl(link.href);
+    }
+  }
+
+  // Check top visible tweet in feed viewport
+  const articles = Array.from(document.querySelectorAll<HTMLElement>('article[data-testid="tweet"]'));
+  const vh = window.innerHeight;
+  for (const art of articles) {
+    const rect = art.getBoundingClientRect();
+    if (rect.top >= -50 && rect.top < vh / 2) {
+      const link = art.querySelector<HTMLAnchorElement>('a[href*="/status/"]');
+      if (link?.href && isTwitterUrl(link.href)) {
+        return normalizeTwitterUrl(link.href);
+      }
+    }
+  }
+
+  return "";
+}
+
+export function detectActiveUrl(): string {
+  const host = location.hostname.toLowerCase();
+  if (host.includes("x.com") || host.includes("twitter.com")) {
+    return detectActiveTwitterUrl();
+  }
+  return detectActiveTikTokUrl();
+}
+
+function injectTwitterDownloadButtons(): void {
+  const groups = Array.from(
+    document.querySelectorAll<HTMLElement>('article[data-testid="tweet"] div[role="group"]'),
+  );
+
+  for (const group of groups) {
+    if (group.querySelector(`.${INJECTED_CLASS}`)) continue;
+
+    const btnWrapper = document.createElement("div");
+    btnWrapper.className = INJECTED_CLASS;
+    btnWrapper.style.cssText = `
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 8px;
+      cursor: pointer;
+    `;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.setAttribute("aria-label", "Download Media via Maggi Downloader");
+    btn.setAttribute("title", "Download Media via Maggi Downloader");
+    btn.style.cssText = `
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s ease;
+    `;
+    btn.innerHTML = `
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+    `;
+
+    btn.onmouseenter = () => {
+      btn.style.background = "#ffffff";
+      btn.style.color = "#000000";
+      btn.style.transform = "scale(1.08)";
+    };
+    btn.onmouseleave = () => {
+      btn.style.background = "rgba(255, 255, 255, 0.08)";
+      btn.style.color = "#ffffff";
+      btn.style.transform = "scale(1)";
+    };
+
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+
+      const article = group.closest('article[data-testid="tweet"]');
+      const tweetLink = article?.querySelector<HTMLAnchorElement>('a[href*="/status/"]');
+      let tweetUrl = tweetLink?.href ? normalizeTwitterUrl(tweetLink.href) : "";
+      if (!tweetUrl && isTwitterUrl(location.href)) {
+        tweetUrl = normalizeTwitterUrl(location.href);
+      }
+
+      if (!tweetUrl) return;
+
+      btn.style.opacity = "0.6";
+      try {
+        const resolveRes = await sendMessage<ResolveResult>({
+          type: "media/resolve",
+          url: tweetUrl,
+          reason: "in-page-button",
+        });
+
+        await sendMessage({
+          type: "downloads/start",
+          request: {
+            kind: resolveRes.media.contentType === "images" ? "images" : "video",
+            media: resolveRes.media,
+            saveAs: false,
+          },
+        });
+
+        btn.style.borderColor = "#4ade80";
+        btn.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        `;
+      } catch (err) {
+        logger.error("Twitter in-page download failed", err);
+        btn.style.borderColor = "#f87171";
+      } finally {
+        setTimeout(() => {
+          btn.style.opacity = "1";
+          btn.style.borderColor = "rgba(255, 255, 255, 0.2)";
+          btn.innerHTML = `
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          `;
+        }, 3000);
+      }
+    });
+
+    btnWrapper.appendChild(btn);
+    group.appendChild(btnWrapper);
+  }
+}
+
 function renderChip(url: string): void {
   removeChip();
-  if (!settings?.showInPageAction || !isTikTokUrl(url)) return;
+  if (!settings?.showInPageAction || !isSupportedMediaUrl(url)) return;
 
   const chip = document.createElement("button");
   chip.id = CHIP_ID;
@@ -520,10 +675,14 @@ async function processPageState(): Promise<void> {
   const pageUrl = location.href;
   const pageChanged = pageUrl !== currentPageUrl;
   currentPageUrl = pageUrl;
-  const detectedUrl = detectActiveTikTokUrl();
+  const detectedUrl = detectActiveUrl();
 
-  // Always keep injected buttons up to date on new DOM items
-  injectDownloadButtons();
+  const isTwitter = location.hostname.includes("x.com") || location.hostname.includes("twitter.com");
+  if (isTwitter) {
+    injectTwitterDownloadButtons();
+  } else {
+    injectDownloadButtons();
+  }
 
   if (!detectedUrl) {
     if (currentDetectedUrl) {
@@ -580,7 +739,7 @@ function observeUrlChanges(): void {
     { passive: true },
   );
 
-  // Rapid 250ms interval check for SPA state changes and newly rendered videos
+  // Rapid 300ms interval check for SPA state changes and newly rendered items
   locationPollId = window.setInterval(() => {
     scheduleRefresh();
   }, 300);
@@ -590,7 +749,7 @@ function bindDirectMessageListener(): void {
   // Listen for direct queries from popup
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === "content/getActivePost") {
-      const url = detectActiveTikTokUrl();
+      const url = detectActiveUrl();
       sendResponse({ url });
     }
     return true;

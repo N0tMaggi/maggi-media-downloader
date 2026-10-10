@@ -1,5 +1,5 @@
 import "./styles.css";
-import { describeContentType, isTikTokUrl } from "../shared/tiktok";
+import { describeContentType, detectPlatform, isSupportedMediaUrl, normalizeMediaUrl } from "../shared/platforms";
 import { setDebugLogging } from "../shared/logger";
 import { applyTheme } from "../shared/theme";
 import { buildDownloadFilename } from "../shared/filename";
@@ -146,24 +146,28 @@ function getSightSummary(): { dotClass: string; label: string; badge: string } {
 
   if (state.media) {
     const typeLabel = describeContentType(state.media.contentType);
+    const platform = detectPlatform(state.media.sourceUrl);
+    const platformTag = platform === "twitter" ? "X" : "TikTok";
     return {
       dotClass: "sight-dot active",
-      label: `● Seeing @${state.media.author} (${typeLabel})`,
-      badge: state.cacheHit ? `CACHED ${Math.round(state.cacheAge / 1000)}S` : "LIVE",
+      label: `● Seeing @${state.media.author} on ${platformTag} (${typeLabel})`,
+      badge: state.cacheHit ? `${platformTag.toUpperCase()} CACHED` : `${platformTag.toUpperCase()} LIVE`,
     };
   }
 
   if (state.detectedUrl) {
+    const platform = detectPlatform(state.detectedUrl);
+    const platformTag = platform === "twitter" ? "X" : "TikTok";
     return {
       dotClass: "sight-dot active",
-      label: `Spotted: ${state.detectedUrl.slice(0, 32)}...`,
-      badge: "DETECTED",
+      label: `Spotted ${platformTag}: ${state.detectedUrl.slice(0, 32)}...`,
+      badge: `${platformTag.toUpperCase()} SIGHT`,
     };
   }
 
   return {
     dotClass: "sight-dot",
-    label: "No TikTok post in current tab",
+    label: "No TikTok or X post in current tab",
     badge: "IDLE",
   };
 }
@@ -331,8 +335,8 @@ function renderPreviewTab(): string {
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
           </div>
-          <div class="empty-title">No TikTok Post Spotted</div>
-          <p class="empty-desc">Open a TikTok video or photo post in the browser, or paste a link below.</p>
+          <div class="empty-title">No Media Post Spotted</div>
+          <p class="empty-desc">Open a TikTok or X (Twitter) post in the browser, or paste a link below.</p>
           <button class="btn-primary" id="pasteFromClipboardBtn" type="button">
             <span>Paste from Clipboard</span>
           </button>
@@ -354,10 +358,13 @@ function renderPreviewTab(): string {
     ? `<img class="author-avatar-img" src="${media.authorAvatar}" alt="@${media.author}" />`
     : `<div class="author-avatar-fallback">${media.author.slice(0, 1).toUpperCase()}</div>`;
 
+  const platform = detectPlatform(media.sourceUrl);
+  const platformLabel = platform === "twitter" ? "Open on X (Twitter)" : "Open on TikTok";
+
   return `
     <div class="card">
       <div class="post-header">
-        <a class="author-chip" href="${media.sourceUrl}" target="_blank" title="Open on TikTok">
+        <a class="author-chip" href="${media.sourceUrl}" target="_blank" title="${platformLabel}">
           ${avatarMarkup}
           <div class="author-info">
             <div class="author-name">
@@ -366,7 +373,7 @@ function renderPreviewTab(): string {
             ${media.title ? `<div class="author-title-caption" title="${media.title}">${media.title}</div>` : ""}
           </div>
         </a>
-        <button class="icon-btn" id="copyUrlBtn" title="Copy TikTok URL" type="button">
+        <button class="icon-btn" id="copyUrlBtn" title="Copy Post URL" type="button">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -595,7 +602,7 @@ async function loadFromActiveTab(): Promise<void> {
 
   // 1. Direct post URL in address bar
   const activeUrl = tab.url || "";
-  if (activeUrl && isTikTokUrl(activeUrl)) {
+  if (activeUrl && isSupportedMediaUrl(activeUrl)) {
     state.detectedUrl = activeUrl;
     await resolveUrl(activeUrl, "active-tab");
     return;
@@ -606,20 +613,20 @@ async function loadFromActiveTab(): Promise<void> {
     const liveResponse = (await chrome.tabs.sendMessage(tab.id, {
       type: "content/getActivePost",
     })) as { url?: string } | undefined;
-    if (liveResponse?.url && isTikTokUrl(liveResponse.url)) {
+    if (liveResponse?.url && isSupportedMediaUrl(liveResponse.url)) {
       state.detectedUrl = liveResponse.url;
       await resolveUrl(liveResponse.url, "active-tab");
       return;
     }
   } catch {
-    // Content script not ready or page is not TikTok
+    // Content script not ready or page is not a supported site
   }
 
   // 3. Fallback to background page context
   const pageContextResponse = await sendMessage<{ context: { normalizedUrl: string } | null }>({
     type: "page/getContext",
   });
-  if (pageContextResponse.context?.normalizedUrl && isTikTokUrl(pageContextResponse.context.normalizedUrl)) {
+  if (pageContextResponse.context?.normalizedUrl && isSupportedMediaUrl(pageContextResponse.context.normalizedUrl)) {
     state.detectedUrl = pageContextResponse.context.normalizedUrl;
     await resolveUrl(pageContextResponse.context.normalizedUrl, "active-tab");
     return;
@@ -791,8 +798,8 @@ function bindEvents(): void {
     try {
       const text = await navigator.clipboard.readText();
       const trimmed = text.trim();
-      if (!trimmed || !isTikTokUrl(trimmed)) {
-        setStatus("Clipboard does not contain a supported TikTok URL.", "error");
+      if (!trimmed || !isSupportedMediaUrl(trimmed)) {
+        setStatus("Clipboard does not contain a supported TikTok or X URL.", "error");
         return;
       }
       await resolveUrl(trimmed, "manual");
@@ -808,8 +815,8 @@ function bindEvents(): void {
   const handleManualFetch = async () => {
     const input = document.querySelector<HTMLInputElement>("#manualInput");
     const url = input?.value.trim() || "";
-    if (!isTikTokUrl(url)) {
-      setStatus("Please enter a valid TikTok video or photo URL.", "error");
+    if (!isSupportedMediaUrl(url)) {
+      setStatus("Please enter a valid TikTok or X (Twitter) URL.", "error");
       return;
     }
     await resolveUrl(url, "manual");

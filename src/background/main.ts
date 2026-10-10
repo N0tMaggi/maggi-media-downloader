@@ -14,7 +14,7 @@ import {
   setPageContext,
   updateSettings,
 } from "../shared/storage";
-import { normalizeTikTokUrl } from "../shared/tiktok";
+import { normalizeMediaUrl } from "../shared/platforms";
 import type { DownloadKind, DownloadRequest, PageContext, ResolvedMedia } from "../shared/types";
 
 const logger = createLogger("background");
@@ -36,7 +36,7 @@ function createJobId(): string {
 }
 
 async function resolveMedia(url: string) {
-  const normalized = normalizeTikTokUrl(url);
+  const normalized = normalizeMediaUrl(url);
   const cached = await getCachedMedia(normalized);
 
   if (cached) {

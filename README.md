@@ -11,7 +11,7 @@
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.9-000000?style=for-the-badge&logo=typescript&logoColor=white" />
   <img alt="Vite" src="https://img.shields.io/badge/Vite-5.4-000000?style=for-the-badge&logo=vite&logoColor=white" />
   <img alt="Vitest" src="https://img.shields.io/badge/Vitest-2.1-000000?style=for-the-badge&logo=vitest&logoColor=white" />
-  <img alt="Platforms" src="https://img.shields.io/badge/Platforms-TikTok%20%7C%20X%20(Upcoming)-000000?style=for-the-badge" />
+  <img alt="Platforms" src="https://img.shields.io/badge/Platforms-TikTok%20%7C%20X%20(Twitter)%20Active-000000?style=for-the-badge" />
   <img alt="License" src="https://img.shields.io/badge/License-MIT-000000?style=for-the-badge" />
 </p>
 
@@ -19,11 +19,11 @@ Chromium Manifest V3 multi-platform media downloader extension for TikTok and X 
 
 ## Overview
 - **Zero AI-Slob Monochrome Aesthetic**: Pure black & white (`#000000` / `#ffffff`) high-craft design with crisp typography, subtle frosted borders, and live sight status indicators.
-- **In-Feed Native 1-Click Action**: Injects a native 48px circular "Download" button directly into TikTok's video action rails (feed & modal views) for instant watermark-free saving.
+- **In-Feed & In-Tweet Native 1-Click Action**: Injects native download action buttons directly into TikTok's video action rails and X/Twitter's tweet action bars for instant watermark-free saving.
 - **Interactive Preview Decks**: Built-in HTML5 video player, photo carousel slideshow with thumbnail ribbon, and audio soundtrack player with live equalizer.
-- **High-Performance Sight Engine**: Instant 80ms viewport tracking and SPA history transitions with zero scroll lag.
-- **Platform Matrix**: TikTok (fully active with video/photo/audio extraction) & X / Twitter (roadmap architecture ready).
-- **Backend Extractor**: Powered by `api.maggi.dev` with live author avatar and metadata resolution.
+- **High-Performance Sight Engine**: Instant 80ms viewport tracking and SPA history transitions with zero scroll lag across TikTok and X.
+- **Platform Matrix**: **TikTok** (`https://api.maggi.dev/tiktok?url=...`) and **X / Twitter** (`https://api.maggi.dev/twitter?url=...`) fully active.
+- **Backend Extractor**: Powered by `api.maggi.dev` with live author avatars, handles, and metadata resolution.
 - **Customizable Preferences**: Dynamic filename templates with real-time token preview and quick-insert pills, theme modes, and per-media "Save As" prompts.
 
 ## Visual Previews

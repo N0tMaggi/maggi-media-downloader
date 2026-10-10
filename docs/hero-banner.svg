@@ -22,7 +22,7 @@
     <rect x="0" y="0" width="176" height="32" rx="16" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.14)"/>
     <circle cx="16" cy="16" r="4" fill="#4ade80"/>
     <text x="28" y="21" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" letter-spacing="0.05em">MV3 EXTENSION</text>
-    <text x="136" y="21" fill="#888888" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="600">v2.1.0</text>
+    <text x="136" y="21" fill="#888888" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="600">v2.2.0</text>
 
     <!-- Main Title -->
     <text x="0" y="80" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="44" font-weight="800" letter-spacing="-0.03em">Maggi Media</text>
@@ -40,10 +40,10 @@
       <rect x="96" y="10" width="60" height="22" rx="6" fill="#ffffff"/>
       <text x="105" y="25" fill="#000000" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="800">ACTIVE</text>
       
-      <rect x="180" y="0" width="168" height="42" rx="12" fill="#111111" stroke="rgba(255,255,255,0.1)"/>
-      <text x="198" y="26" fill="#888888" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="600">X / Twitter</text>
-      <rect x="274" y="10" width="64" height="22" rx="6" fill="rgba(255,255,255,0.06)"/>
-      <text x="282" y="25" fill="#666666" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="700">SOON</text>
+      <rect x="180" y="0" width="168" height="42" rx="12" fill="#111111" stroke="rgba(255,255,255,0.2)"/>
+      <text x="198" y="26" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="700">X / Twitter</text>
+      <rect x="274" y="10" width="60" height="22" rx="6" fill="#ffffff"/>
+      <text x="283" y="25" fill="#000000" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="800">ACTIVE</text>
     </g>
 
     <!-- Feature Bullet Cards -->
@@ -52,7 +52,7 @@
       
       <circle cx="28" cy="36" r="4" fill="#ffffff"/>
       <text x="44" y="40" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="600">In-Feed Native Download Button</text>
-      <text x="44" y="58" fill="#666666" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12">1-Click circular action button directly on TikTok feed rails</text>
+      <text x="44" y="58" fill="#666666" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12">1-Click circular action button directly on TikTok &amp; X feed rails</text>
 
       <circle cx="28" cy="86" r="4" fill="#ffffff"/>
       <text x="44" y="90" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="600">Interactive Previews &amp; Equalizer</text>

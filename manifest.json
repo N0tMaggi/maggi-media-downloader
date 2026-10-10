@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "maggi.dev media downloader",
-  "version": "2.1.0",
-  "description": "High-performance media downloader for TikTok & X with interactive preview deck and configurable defaults.",
+  "version": "2.2.0",
+  "description": "High-performance monochrome media downloader for TikTok & X with interactive preview deck and configurable defaults.",
   "icons": {
     "128": "assets/safe.png"
   },
@@ -30,7 +30,9 @@
   "content_scripts": [
     {
       "matches": [
-        "https://*.tiktok.com/*"
+        "https://*.tiktok.com/*",
+        "https://*.x.com/*",
+        "https://*.twitter.com/*"
       ],
       "js": [
         "src/content/main.ts"
@@ -39,4 +41,3 @@
     }
   ]
 }
-
