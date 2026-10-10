@@ -213,68 +213,83 @@ export function detectActiveTikTokUrl(): string {
   return "";
 }
 
-function findActionRail(container: HTMLElement): HTMLElement | null {
-  // A. Share element
-  const shareEl = container.querySelector(
-    '[data-e2e*="share"], [aria-label*="share" i], [aria-label*="teilen" i]',
+function isCommentElement(el: Element | null): boolean {
+  if (!el) return false;
+  return !!el.closest(
+    '[data-e2e*="comment-list"], [data-e2e*="comment-item"], [data-e2e*="comment-level"], [class*="CommentList"], [class*="CommentItem"], [class*="comment-item"], [class*="DivCommentList"], [class*="DivCommentItem"], [class*="DivCommentContainer"], [class*="CommentContainer"], [class*="CommentContent"], [data-e2e*="comment-like"]',
   );
-  if (shareEl) {
-    const rail = (shareEl.closest(
-      '[class*="ActionItemContainer"], [class*="DivActionItemContainer"], [class*="ActionBar"], [class*="Actions"]',
-    ) as HTMLElement | null) || shareEl.parentElement?.parentElement;
-    if (rail) return rail;
-  }
-
-  // B. Like / Comment element
-  const anyActionEl = container.querySelector(
-    '[data-e2e*="like"], [data-e2e*="comment"], [data-e2e*="favorite"], [aria-label*="like" i], [aria-label*="gefällt" i]',
-  );
-  if (anyActionEl) {
-    const rail = (anyActionEl.closest(
-      '[class*="ActionItemContainer"], [class*="DivActionItemContainer"], [class*="ActionBar"]',
-    ) as HTMLElement | null) || anyActionEl.parentElement?.parentElement;
-    if (rail) return rail;
-  }
-
-  // C. Find column with action buttons
-  const buttons = Array.from(container.querySelectorAll("button, [role='button']"));
-  for (const btn of buttons) {
-    if (btn.querySelector("svg") && btn.parentElement) {
-      const rail = btn.parentElement.parentElement;
-      if (rail && rail.children.length >= 3) {
-        return rail;
-      }
-    }
-  }
-
-  return null;
 }
 
-function injectDownloadButtons(): void {
-  // Find all item containers on the page
-  const containers = Array.from(
+function findActionRails(): HTMLElement[] {
+  const rails: HTMLElement[] = [];
+
+  // Exclusively target video action elements (never comments)
+  const actionTriggers = Array.from(
     document.querySelectorAll<HTMLElement>(
-      '[data-e2e="recommend-list-item-container"], [data-e2e="browse-video"], article, [class*="DivItemContainer"], [class*="ItemContainer"]',
+      '[data-e2e="feed-share-icon"], [data-e2e="share-icon"], [data-e2e="video-share-container"], [data-e2e="share-button"], [data-e2e="feed-favorite-icon"], [data-e2e="feed-like-icon"], [data-e2e="feed-comment-icon"]',
     ),
   );
 
-  // If no containers found by class, use containers around videos
-  const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("video"));
-  for (const video of videos) {
-    const parentContainer =
-      (video.closest(
-        '[data-e2e="recommend-list-item-container"], [data-e2e="browse-video"], article, [class*="DivItemContainer"], [class*="ItemContainer"]',
-      ) as HTMLElement | null) || video.parentElement?.parentElement?.parentElement;
-    if (parentContainer && !containers.includes(parentContainer)) {
-      containers.push(parentContainer);
+  // Also include modal share / action container if present
+  const modal = document.querySelector<HTMLElement>('[data-e2e="browse-video"]');
+  if (modal) {
+    const modalShare = modal.querySelector<HTMLElement>(
+      '[data-e2e*="share"], [class*="DivShare"], [class*="ShareContainer"]',
+    );
+    if (modalShare && !isCommentElement(modalShare)) {
+      actionTriggers.push(modalShare);
     }
   }
 
-  for (const container of containers) {
-    if (container.querySelector(`.${INJECTED_CLASS}`)) continue;
+  for (const el of actionTriggers) {
+    if (isCommentElement(el)) continue;
 
-    const actionRail = findActionRail(container);
-    if (!actionRail) continue;
+    const rail =
+      (el.closest(
+        '[class*="ActionItemContainer"], [class*="DivActionItemContainer"], [class*="ActionBar"], [class*="Actions"]',
+      ) as HTMLElement | null) || (el.parentElement?.parentElement as HTMLElement | null);
+
+    if (rail && rail instanceof HTMLElement && !isCommentElement(rail) && !rails.includes(rail)) {
+      rails.push(rail);
+    }
+  }
+
+  return rails;
+}
+
+function injectDownloadButtons(): void {
+  // 1. Instantly remove any rogue buttons inside comments or duplicates
+  const allInjected = Array.from(document.querySelectorAll<HTMLElement>(`.${INJECTED_CLASS}`));
+  const seenRails = new Set<HTMLElement>();
+  for (const item of allInjected) {
+    if (isCommentElement(item)) {
+      item.remove();
+      continue;
+    }
+    const parent = item.parentElement;
+    if (!parent || seenRails.has(parent)) {
+      item.remove();
+    } else {
+      seenRails.add(parent);
+    }
+  }
+
+  // 2. Discover all legitimate video action rails on the page
+  const rails = findActionRails();
+
+  for (const actionRail of rails) {
+    if (isCommentElement(actionRail)) continue;
+
+    // Already has our button or is marked as injected? Skip immediately!
+    if (
+      actionRail.dataset.maggiInjected === "true" ||
+      actionRail.querySelector(`.${INJECTED_CLASS}`) ||
+      actionRail.closest(`[data-maggi-injected="true"]`)
+    ) {
+      continue;
+    }
+
+    actionRail.dataset.maggiInjected = "true";
 
     // Create action item matching TikTok's native style
     const actionWrapper = document.createElement("div");
@@ -347,7 +362,15 @@ function injectDownloadButtons(): void {
 
       if (btn.disabled) return;
 
-      let postUrl = extractPostUrlFromContainer(container);
+      // Find the parent post container for this specific rail
+      const feedContainer =
+        (actionRail.closest(
+          '[data-e2e="recommend-list-item-container"], [data-e2e="browse-video"], article, [class*="DivItemContainer"], [class*="ItemContainer"]',
+        ) as HTMLElement | null) ||
+        (actionRail.parentElement?.parentElement as HTMLElement | null) ||
+        actionRail.parentElement;
+
+      let postUrl = feedContainer ? extractPostUrlFromContainer(feedContainer) : "";
       if (!postUrl) {
         postUrl = detectActiveTikTokUrl();
       }
@@ -357,7 +380,9 @@ function injectDownloadButtons(): void {
 
       if (!postUrl) {
         label.innerText = "No URL";
-        setTimeout(() => { label.innerText = "Download"; }, 2000);
+        setTimeout(() => {
+          label.innerText = "Download";
+        }, 2000);
         return;
       }
 
