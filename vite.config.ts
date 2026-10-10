@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
 import webExtension from "@samrum/vite-plugin-web-extension";
@@ -16,6 +16,19 @@ export default defineConfig({
         html: ["options.html"],
       },
     }),
+    {
+      name: "copy-extension-assets",
+      closeBundle() {
+        const destDir = resolve(__dirname, "dist/assets");
+        if (!existsSync(destDir)) {
+          mkdirSync(destDir, { recursive: true });
+        }
+        const srcIcon = resolve(__dirname, "assets/safe.png");
+        if (existsSync(srcIcon)) {
+          copyFileSync(srcIcon, resolve(destDir, "safe.png"));
+        }
+      },
+    },
   ],
   build: {
     target: "chrome114",
