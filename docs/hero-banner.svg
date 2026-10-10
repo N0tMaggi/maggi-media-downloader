@@ -1,42 +1,141 @@
 <svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1280" height="640" rx="32" fill="#0F172A"/>
-  <rect x="32" y="32" width="1216" height="576" rx="28" fill="url(#bg)"/>
-  <rect x="72" y="76" width="360" height="488" rx="28" fill="#F8FAFC" fill-opacity="0.96"/>
-  <rect x="104" y="118" width="210" height="20" rx="10" fill="#0F172A"/>
-  <rect x="104" y="154" width="260" height="14" rx="7" fill="#94A3B8"/>
-  <rect x="104" y="206" width="296" height="128" rx="20" fill="#E2E8F0"/>
-  <rect x="124" y="226" width="72" height="92" rx="14" fill="url(#thumb)"/>
-  <rect x="214" y="230" width="124" height="16" rx="8" fill="#0F172A"/>
-  <rect x="214" y="258" width="148" height="12" rx="6" fill="#64748B"/>
-  <rect x="214" y="286" width="110" height="12" rx="6" fill="#64748B"/>
-  <rect x="104" y="362" width="88" height="42" rx="14" fill="#111827"/>
-  <rect x="206" y="362" width="88" height="42" rx="14" fill="#111827"/>
-  <rect x="308" y="362" width="88" height="42" rx="14" fill="#111827"/>
-  <rect x="104" y="420" width="296" height="48" rx="14" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/>
-  <rect x="474" y="88" width="738" height="180" rx="28" fill="#08111F" fill-opacity="0.72" stroke="#334155"/>
-  <text x="520" y="148" fill="#F8FAFC" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">TikTok Downloader</text>
-  <text x="520" y="190" fill="#CBD5E1" font-family="Segoe UI, Arial, sans-serif" font-size="18">MV3 extension with background, content script, popup, options,</text>
-  <text x="520" y="218" fill="#CBD5E1" font-family="Segoe UI, Arial, sans-serif" font-size="18">cache, provider adapter, live updates, and downloads.</text>
-  <rect x="474" y="302" width="350" height="224" rx="28" fill="#08111F" fill-opacity="0.72" stroke="#334155"/>
-  <rect x="862" y="302" width="350" height="224" rx="28" fill="#08111F" fill-opacity="0.72" stroke="#334155"/>
-  <text x="510" y="350" fill="#F8FAFC" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">Runtime</text>
-  <text x="510" y="390" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Background service worker</text>
-  <text x="510" y="420" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Content-script page detection</text>
-  <text x="510" y="450" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Popup with live updates</text>
-  <text x="510" y="480" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Options and persisted defaults</text>
-  <text x="898" y="350" fill="#F8FAFC" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700">Core Modules</text>
-  <text x="898" y="390" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Provider adapter</text>
-  <text x="898" y="420" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Typed messages</text>
-  <text x="898" y="450" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Storage and cache</text>
-  <text x="898" y="480" fill="#E2E8F0" font-family="Segoe UI, Arial, sans-serif" font-size="16">• Theme, filenames, TikTok utils</text>
+  <!-- Deep Obsidian Canvas -->
+  <rect width="1280" height="640" rx="24" fill="#050505"/>
+  <rect x="2" y="2" width="1276" height="636" rx="22" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+  
+  <!-- Subtle Grid Pattern -->
   <defs>
-    <linearGradient id="bg" x1="56" y1="56" x2="1224" y2="584" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#111827"/>
-      <stop offset="1" stop-color="#1D4ED8"/>
-    </linearGradient>
-    <linearGradient id="thumb" x1="124" y1="226" x2="196" y2="318" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FB7185"/>
-      <stop offset="1" stop-color="#F59E0B"/>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>
+    </pattern>
+    <linearGradient id="glow" x1="640" y1="0" x2="640" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
   </defs>
+  <rect width="1280" height="640" fill="url(#grid)"/>
+  <circle cx="640" cy="180" r="320" fill="url(#glow)"/>
+
+  <!-- Left Side: Hero Identity & Core Badges -->
+  <g transform="translate(80, 80)">
+    <!-- Brand Pill -->
+    <rect x="0" y="0" width="176" height="32" rx="16" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.14)"/>
+    <circle cx="16" cy="16" r="4" fill="#4ade80"/>
+    <text x="28" y="21" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="700" letter-spacing="0.05em">MV3 EXTENSION</text>
+    <text x="136" y="21" fill="#888888" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="600">v2.1.0</text>
+
+    <!-- Main Title -->
+    <text x="0" y="80" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="44" font-weight="800" letter-spacing="-0.03em">Maggi Media</text>
+    <text x="0" y="132" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="44" font-weight="800" letter-spacing="-0.03em">Downloader</text>
+
+    <!-- Description -->
+    <text x="0" y="180" fill="#888888" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="400">Pure monochrome, high-performance media extractor.</text>
+    <text x="0" y="206" fill="#888888" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="400">Zero AI-slob design. No watermarks. Interactive previews.</text>
+
+    <!-- Platform Tags -->
+    <g transform="translate(0, 246)">
+      <rect x="0" y="0" width="168" height="42" rx="12" fill="#111111" stroke="rgba(255,255,255,0.2)"/>
+      <circle cx="22" cy="21" r="5" fill="#ffffff"/>
+      <text x="36" y="26" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="700">TikTok</text>
+      <rect x="96" y="10" width="60" height="22" rx="6" fill="#ffffff"/>
+      <text x="105" y="25" fill="#000000" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="800">ACTIVE</text>
+      
+      <rect x="180" y="0" width="168" height="42" rx="12" fill="#111111" stroke="rgba(255,255,255,0.1)"/>
+      <text x="198" y="26" fill="#888888" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="600">X / Twitter</text>
+      <rect x="274" y="10" width="64" height="22" rx="6" fill="rgba(255,255,255,0.06)"/>
+      <text x="282" y="25" fill="#666666" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" font-weight="700">SOON</text>
+    </g>
+
+    <!-- Feature Bullet Cards -->
+    <g transform="translate(0, 320)">
+      <rect x="0" y="0" width="480" height="140" rx="16" fill="#0c0c0c" stroke="rgba(255,255,255,0.08)"/>
+      
+      <circle cx="28" cy="36" r="4" fill="#ffffff"/>
+      <text x="44" y="40" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="600">In-Feed Native Download Button</text>
+      <text x="44" y="58" fill="#666666" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12">1-Click circular action button directly on TikTok feed rails</text>
+
+      <circle cx="28" cy="86" r="4" fill="#ffffff"/>
+      <text x="44" y="90" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="600">Interactive Previews &amp; Equalizer</text>
+      <text x="44" y="108" fill="#666666" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12">HTML5 video player, photo slide deck, live audio soundtrack player</text>
+    </g>
+  </g>
+
+  <!-- Right Side: Extension Popup Window Frame (Isometric-style clean card) -->
+  <g transform="translate(680, 50)">
+    <!-- Popup Mockup Shadow and Container -->
+    <rect x="0" y="0" width="480" height="540" rx="20" fill="#000000" stroke="rgba(255,255,255,0.18)" stroke-width="1.5"/>
+
+    <!-- Header bar -->
+    <rect x="0" y="0" width="480" height="56" rx="20" fill="#0a0a0a"/>
+    <line x1="0" y1="56" x2="480" y2="56" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+    
+    <!-- Logo & Title -->
+    <rect x="18" y="14" width="28" height="28" rx="8" fill="#141414" stroke="rgba(255,255,255,0.2)"/>
+    <path d="M 32 20 L 32 32 M 27 27 L 32 32 L 37 27" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="54" y="32" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="700">MAGGI DOWNLOADER</text>
+    
+    <!-- Sight Status Badge -->
+    <rect x="350" y="15" width="112" height="26" rx="13" fill="#111111" stroke="rgba(255,255,255,0.15)"/>
+    <circle cx="364" cy="28" r="4" fill="#4ade80"/>
+    <text x="375" y="32" fill="#4ade80" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="700">FEED SIGHT</text>
+
+    <!-- Post Info Card -->
+    <g transform="translate(18, 72)">
+      <rect x="0" y="0" width="444" height="66" rx="14" fill="#0e0e0e" stroke="rgba(255,255,255,0.1)"/>
+      <circle cx="33" cy="33" r="18" fill="#222222"/>
+      <text x="33" y="38" text-anchor="middle" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="700">M</text>
+      
+      <text x="62" y="27" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="700">@femboymaggi</text>
+      <text x="62" y="46" fill="#888888" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11">id: 7482910482910382910</text>
+      
+      <rect x="348" y="20" width="80" height="26" rx="6" fill="#ffffff"/>
+      <text x="388" y="37" text-anchor="middle" fill="#000000" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="800">RESOLVED</text>
+    </g>
+
+    <!-- Video Preview Card -->
+    <g transform="translate(18, 150)">
+      <rect x="0" y="0" width="444" height="220" rx="14" fill="#0c0c0c" stroke="rgba(255,255,255,0.1)"/>
+      
+      <!-- Video Screen Mockup -->
+      <rect x="12" y="12" width="420" height="144" rx="10" fill="#141414"/>
+      <circle cx="222" cy="84" r="24" fill="rgba(255,255,255,0.15)" stroke="#ffffff" stroke-width="1.5"/>
+      <polygon points="218,74 232,84 218,94" fill="#ffffff"/>
+      
+      <!-- Scrubber -->
+      <line x1="24" y1="140" x2="420" y2="140" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+      <line x1="24" y1="140" x2="160" y2="140" stroke="#ffffff" stroke-width="2"/>
+      <circle cx="160" cy="140" r="4" fill="#ffffff"/>
+
+      <!-- Download Button Inside Video Preview -->
+      <g transform="translate(12, 168)">
+        <rect x="0" y="0" width="420" height="40" rx="10" fill="#ffffff"/>
+        <path d="M 175 20 L 175 28 M 171 24 L 175 28 L 179 24" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="220" y="25" text-anchor="middle" fill="#000000" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="700">Download MP4 (No Watermark)</text>
+      </g>
+    </g>
+
+    <!-- Soundtrack / Audio Deck -->
+    <g transform="translate(18, 382)">
+      <rect x="0" y="0" width="444" height="60" rx="14" fill="#0e0e0e" stroke="rgba(255,255,255,0.1)"/>
+      
+      <!-- Mini Equalizer Bars -->
+      <rect x="18" y="28" width="3" height="12" fill="#ffffff"/>
+      <rect x="24" y="20" width="3" height="20" fill="#ffffff"/>
+      <rect x="30" y="24" width="3" height="16" fill="#ffffff"/>
+      <rect x="36" y="18" width="3" height="22" fill="#ffffff"/>
+
+      <text x="50" y="28" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" font-weight="600">Soundtrack: Original Sound</text>
+      <text x="50" y="44" fill="#777777" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11">Duration: 00:32 • 320 kbps</text>
+
+      <rect x="328" y="14" width="102" height="32" rx="8" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.16)"/>
+      <text x="379" y="34" text-anchor="middle" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="600">Get Audio</text>
+    </g>
+
+    <!-- Footer Bar -->
+    <g transform="translate(18, 456)">
+      <rect x="0" y="0" width="444" height="60" rx="14" fill="#0a0a0a" stroke="rgba(255,255,255,0.06)"/>
+      <text x="16" y="34" fill="#666666" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11">Powered by api.maggi.dev</text>
+      <text x="370" y="34" fill="#888888" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="11" font-weight="600">Settings ⚙</text>
+    </g>
+  </g>
 </svg>

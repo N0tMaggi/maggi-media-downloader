@@ -7,80 +7,90 @@
 </p>
 
 <p align="center">
-  <img alt="MV3" src="https://img.shields.io/badge/Chrome%20Extension-MV3-111827?style=for-the-badge&logo=googlechrome" />
-  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.9-2563EB?style=for-the-badge&logo=typescript&logoColor=white" />
-  <img alt="Vite" src="https://img.shields.io/badge/Vite-5.4-7C3AED?style=for-the-badge&logo=vite&logoColor=white" />
-  <img alt="Vitest" src="https://img.shields.io/badge/Vitest-2.1-16A34A?style=for-the-badge&logo=vitest&logoColor=white" />
-  <img alt="Platforms" src="https://img.shields.io/badge/Platforms-TikTok%20%7C%20X%20(Upcoming)-FE2C55?style=for-the-badge" />
-  <img alt="License" src="https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge" />
+  <img alt="MV3" src="https://img.shields.io/badge/Chrome%20Extension-MV3-000000?style=for-the-badge&logo=googlechrome&logoColor=white" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.9-000000?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img alt="Vite" src="https://img.shields.io/badge/Vite-5.4-000000?style=for-the-badge&logo=vite&logoColor=white" />
+  <img alt="Vitest" src="https://img.shields.io/badge/Vitest-2.1-000000?style=for-the-badge&logo=vitest&logoColor=white" />
+  <img alt="Platforms" src="https://img.shields.io/badge/Platforms-TikTok%20%7C%20X%20(Upcoming)-000000?style=for-the-badge" />
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-000000?style=for-the-badge" />
 </p>
 
-Chromium MV3 multi-platform media downloader extension for TikTok and X (Twitter) with real-time video/photo interactive previews and typed background services.
+Chromium Manifest V3 multi-platform media downloader extension for TikTok and X (Twitter) featuring pure monochrome craft design, interactive media preview decks, native in-feed 1-click download actions, and typed background services.
 
 ## Overview
-- Modern interactive glassmorphic UI (HTML5 video player, photo slideshow gallery with thumbnail ribbon, soundtrack audio player with equalizer).
-- High-performance, low-overhead content detection for SPA feed navigation.
-- Platform support: TikTok (fully supported) & X/Twitter (roadmap integration ready).
-- Provider adapter for `api.maggi.dev`.
-- Cache, recent jobs, customizable filename templates, and theme settings.
+- **Zero AI-Slob Monochrome Aesthetic**: Pure black & white (`#000000` / `#ffffff`) high-craft design with crisp typography, subtle frosted borders, and live sight status indicators.
+- **In-Feed Native 1-Click Action**: Injects a native 48px circular "Download" button directly into TikTok's video action rails (feed & modal views) for instant watermark-free saving.
+- **Interactive Preview Decks**: Built-in HTML5 video player, photo carousel slideshow with thumbnail ribbon, and audio soundtrack player with live equalizer.
+- **High-Performance Sight Engine**: Instant 80ms viewport tracking and SPA history transitions with zero scroll lag.
+- **Platform Matrix**: TikTok (fully active with video/photo/audio extraction) & X / Twitter (roadmap architecture ready).
+- **Backend Extractor**: Powered by `api.maggi.dev` with live author avatar and metadata resolution.
+- **Customizable Preferences**: Dynamic filename templates with real-time token preview and quick-insert pills, theme modes, and per-media "Save As" prompts.
 
-## Visual Preview
+## Visual Previews
+
+### Extension Popup
 ![Popup Preview](./docs/popup-preview.svg)
 
+### Settings & Preferences
+![Options Preview](./docs/options-preview.svg)
+
 ## Feature Set
-- **Interactive Previews**: Watch videos, browse photo carousel slides, and listen to audio soundtracks directly in the popup before downloading.
-- **Selective Downloads**: Download single slides from a photo set or batch-download all photos.
-- **Fast Content Detection**: Intercepts SPA history transitions with zero scroll lag.
-- **Flexible File Naming**: Configurable tokens `{author}`, `{id}`, `{type}`, `{index}`, `{title}`.
-- **Quick Settings**: Instant "Save As" toggle right inside the popup.
-- **Multi-Platform Support**: Built for TikTok with architecture ready for X (Twitter).
+- **In-Page Action Button**: 1-Click download directly inside TikTok's native feed without opening the extension popup. Deduplicated and isolated from comments.
+- **Interactive Video Deck**: Preview HD videos before downloading with playback scrubbers, fullscreen mode, and direct MP4 saving without watermarks.
+- **Photo Carousel Gallery**: View multi-slide photo posts, browse thumbnail strips, and download individual photos or the entire set at once.
+- **Soundtrack Audio Player**: Dedicated audio deck with soundwave equalizer, author info, and direct MP3 extraction.
+- **Real-Time Live Sight Indicator**: Live dot in the popup header shows whether the extension currently has a post in sight on the active tab.
+- **Dynamic Filename Templating**: Customize filenames with tokens (`{author}`, `{id}`, `{type}`, `{index}`, `{title}`) with live preview in settings.
+- **Quick Save Prompts**: One-click "Save As" folder prompt toggle right inside the popup and customizable in settings.
+- **Multi-Platform Architecture**: Unified interface designed for TikTok with upcoming X (Twitter) support.
 
 ## Product Flow
 ```mermaid
 flowchart LR
-    A["TikTok Page"] --> B["Content Script"]
-    B --> C["page/contextDetected"]
-    C --> D["Background Service Worker"]
+    A["TikTok Page / Feed"] --> B["Content Script (Sight Engine)"]
+    B -->|In-Feed Button Click| D["Background Service Worker"]
+    B -->|Context Detection| C["page/contextDetected"]
+    C --> D
     D --> E["Provider Adapter"]
     E --> F["api.maggi.dev"]
     D --> G["chrome.storage.local"]
-    D --> H["Popup UI"]
-    H --> I["downloads/start"]
+    D --> H["Popup UI (Preview Decks)"]
+    H -->|Download Trigger| I["downloads/start"]
     I --> D
-    D --> J["chrome.downloads"]
+    D --> J["chrome.downloads API"]
 ```
 
 ## Live Update Flow
 ```mermaid
 sequenceDiagram
-    participant T as TikTok SPA / Feed
+    participant T as TikTok Feed / Modal
     participant C as Content Script
     participant B as Background
     participant P as Popup
-    T->>C: URL changes / feed visibility changes
-    C->>B: page/contextDetected
+    T->>C: Viewport scroll / SPA navigation
+    C->>B: page/contextDetected (active video ID + author)
     B->>P: page/contextUpdated
-    P->>B: media/resolve
-    B->>P: ResolveResult
-    P->>P: Re-render preview + actions
+    P->>B: media/resolve (api.maggi.dev)
+    B->>P: ResolveResult (media streams, avatars, titles)
+    P->>P: Render interactive preview deck
 ```
 
 ## Architecture Map
 ```mermaid
 flowchart TD
-    subgraph UI["Extension UI"]
+    subgraph UI["Extension UI (Monochrome B&W)"]
         Popup["popup.html + src/popup/*"]
         Options["options.html + src/options/*"]
     end
 
-    subgraph Runtime["Runtime"]
+    subgraph Runtime["Runtime Engine"]
         Background["src/background/main.ts"]
-        Content["src/content/main.ts"]
+        Content["src/content/main.ts (In-Feed Button + Sight)"]
     end
 
-    subgraph Shared["Shared Modules"]
+    subgraph Shared["Shared Core"]
         Messages["messages.ts"]
-        Provider["provider.ts"]
+        Provider["provider.ts (api.maggi.dev)"]
         Storage["storage.ts"]
         TikTok["tiktok.ts"]
         Theme["theme.ts"]
@@ -102,27 +112,28 @@ flowchart TD
     Background --> Types
 ```
 
-## Project Map
+## Project Structure
 ```text
 maggi-media-downloader/
 ├─ assets/
 │  └─ safe.png
 ├─ docs/
-│  ├─ hero-banner.svg
-│  └─ popup-preview.svg
+│  ├─ hero-banner.svg       # Monochrome project banner
+│  ├─ popup-preview.svg      # Monochrome popup UI preview
+│  └─ options-preview.svg    # Monochrome settings UI preview
 ├─ src/
 │  ├─ background/
-│  │  └─ main.ts
+│  │  └─ main.ts            # Download manager, context router, cache
 │  ├─ content/
-│  │  └─ main.ts
+│  │  └─ main.ts            # Sight engine, in-feed button injection
 │  ├─ options/
-│  │  ├─ main.ts
-│  │  └─ styles.css
+│  │  ├─ main.ts            # Settings controller, live token preview
+│  │  └─ styles.css         # Monochrome settings styling
 │  ├─ popup/
-│  │  ├─ main.ts
-│  │  └─ styles.css
+│  │  ├─ main.ts            # Interactive video/photo/audio preview decks
+│  │  └─ styles.css         # Monochrome popup styling
 │  └─ shared/
-│     ├─ __tests__/
+│     ├─ __tests__/         # Vitest unit test suite
 │     │  ├─ filename.test.ts
 │     │  ├─ provider.test.ts
 │     │  └─ tiktok.test.ts
@@ -146,124 +157,62 @@ maggi-media-downloader/
 ```
 
 ## Tech Stack
-- TypeScript
-- Vite
-- `@samrum/vite-plugin-web-extension`
-- Vitest
-- Chrome Extension Manifest V3 APIs
+- **TypeScript 5.9** (strict typing across messages, providers, and state)
+- **Vite 5.4** & `@samrum/vite-plugin-web-extension`
+- **Vitest 2.1**
+- **Chrome Extension Manifest V3**
 
-## Core Runtime Pieces
-### Background
-- Caches resolved media by normalized TikTok URL.
-- Starts browser downloads and records recent jobs.
-- Stores and serves settings and active page context.
-- Broadcasts page-context updates to an open popup.
+## Development & Build
 
-### Content Script
-- Detects active TikTok video/photo posts.
-- Tracks SPA transitions, DOM mutations, scrolling, and direct URL changes.
-- Sends context updates and clear events to the background.
-- Renders a small quick-action chip when enabled.
+### Prerequisites
+- Node.js 18+
+- npm
 
-### Popup
-- Loads the active post or manual URL.
-- Displays preview data, metadata, and recent jobs.
-- Starts video/audio/photo downloads.
-- Updates live when the active TikTok post changes.
-
-### Options
-- Controls theme, filename template, page-action visibility, and save-as defaults.
-- Writes settings back to `chrome.storage.local`.
-- Shows live theme preview while editing.
-
-## Settings Defaults
-| Setting | Default |
-|---|---|
-| Theme | `system` |
-| Filename template | `{author}-{id}-{type}` |
-| Auto-detect active TikTok tab | Enabled |
-| Show in-page action | Enabled |
-| Save dialog for video | Enabled |
-| Save dialog for audio | Enabled |
-| Save dialog for images | Disabled |
-| Debug logging | Disabled |
-
-## Storage Model
-```mermaid
-flowchart LR
-    A["settings"] --> B["theme / filenameTemplate / defaults"]
-    C["cache"] --> D["normalized TikTok URL -> resolved media"]
-    E["recentJobs"] --> F["download metadata history"]
-    G["pageContexts"] --> H["tabId -> active detected TikTok post"]
-```
-
-## Development
-### Install
+### Install Dependencies
 ```bash
 npm install
 ```
 
-### Run Checks
+### Type Checking & Unit Tests
 ```bash
 npm run typecheck
 npm test
 ```
 
-### Build
+### Production Build
 ```bash
 npm run build
 ```
+The production bundle is compiled into `dist/`.
 
-### Load In Browser
+### Load Extension in Chrome / Edge / Brave
 1. Run `npm run build`.
-2. Open Chrome or Edge.
-3. Open the extensions page.
-4. Enable developer mode.
-5. Load the unpacked extension from `dist/`.
+2. Navigate to `chrome://extensions`.
+3. Enable **Developer mode** in the top-right corner.
+4. Click **Load unpacked** and select the `dist/` directory.
 
-## Available Scripts
-| Script | Purpose |
-|---|---|
-| `npm run dev` | Vite dev workflow |
-| `npm run typecheck` | TypeScript validation |
-| `npm test` | Vitest unit tests |
-| `npm run build` | Production extension build |
-
-## Testing
-- Unit tests cover TikTok URL normalization and content-type detection.
-- Unit tests cover filename-template expansion and extension assignment.
-- Unit tests cover provider-payload mapping and invalid-response handling.
-- Test files live under `src/shared/__tests__/`.
-
-## Security Notes
-- Download filenames are sanitized before being passed to `chrome.downloads`.
-- Default UI does not expose a verbose terminal/log console.
-- Host permissions are limited to TikTok and the configured provider domain.
-- Persisted data stays in `chrome.storage.local`.
-- Dependency audit currently reports build-time advisories that require breaking Vite/plugin upgrades rather than a safe in-place patch.
+## Settings Defaults
+| Setting | Default | Description |
+|---|---|---|
+| Theme | `dark` | Pure monochrome black & white theme |
+| Filename template | `{author}-{id}-{type}` | Dynamic filename pattern with tokens |
+| Auto-detect active video | Enabled | Follows active viewport video on feed scroll |
+| In-feed download button | Enabled | 1-Click native circular button on video action rails |
+| Save dialog for video | Enabled | Prompts folder location before `.mp4` download |
+| Save dialog for audio | Enabled | Prompts folder location before `.mp3` download |
+| Save dialog for images | Disabled | Saves photo set directly without repeated prompts |
+| Debug logging | Disabled | Detailed logging in DevTools console |
 
 ## Permissions
-| Permission | Why it is needed |
+| Permission | Purpose |
 |---|---|
-| `activeTab` | Access the current tab for popup detection |
-| `tabs` | Query active tab and tab IDs for context sync |
-| `storage` | Persist settings, cache, page contexts, recent jobs |
-| `downloads` | Start file downloads |
-
-## Manifest Surface
-| Surface | Entry |
-|---|---|
-| Background service worker | `src/background/main.ts` |
-| Content script | `src/content/main.ts` |
-| Popup page | `popup.html` -> `src/popup/main.ts` |
-| Options page | `options.html` -> `src/options/main.ts` |
+| `activeTab` | Access the active tab for viewport media detection |
+| `tabs` | Query tab IDs and synchronize feed context |
+| `storage` | Persist preferences, cache, and recent download jobs |
+| `downloads` | Download watermark-free media files |
 
 ## License
-This project is licensed under the MIT License.
+MIT License. See [LICENSE.txt](./LICENSE.txt) for details.
 
-See [LICENSE.txt](./LICENSE.txt) for the full text.
-
-## Credits
-- Original project name and icon branding: Maggi
-- Extension build system: Vite + `@samrum/vite-plugin-web-extension`
-- Testing: Vitest
+## Author
+Developed by **Maggi** ([@N0tMaggi](https://github.com/N0tMaggi)) • [maggi.dev](https://maggi.dev)
