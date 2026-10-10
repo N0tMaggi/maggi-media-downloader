@@ -4,7 +4,7 @@ import type { MessageResponse, SettingsResponse } from "../shared/messages";
 import type { ExtensionSettings } from "../shared/types";
 
 const logger = createLogger("content");
-const CHIP_ID = "maggi-tiktok-downloader-chip";
+const CHIP_ID = "maggi-media-downloader-chip";
 
 let currentPageUrl = "";
 let currentDetectedUrl = "";
@@ -59,49 +59,87 @@ function getAbsoluteHref(value: string | null): string {
   }
 }
 
-function scoreAnchor(anchor: HTMLAnchorElement): number {
-  const href = getAbsoluteHref(anchor.getAttribute("href"));
-  if (!isTikTokUrl(href)) return Number.NEGATIVE_INFINITY;
-
-  const rect = anchor.getBoundingClientRect();
-  const visibleWidth = Math.max(0, Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0));
-  const visibleHeight = Math.max(0, Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
-  const visibleArea = visibleWidth * visibleHeight;
-  if (visibleArea <= 0) return Number.NEGATIVE_INFINITY;
-
-  const viewportCenterY = window.innerHeight / 2;
-  const rectCenterY = rect.top + rect.height / 2;
-  const centerDistance = Math.abs(viewportCenterY - rectCenterY);
-
-  return visibleArea - centerDistance * 10;
-}
-
 function detectActiveTikTokUrl(): string {
+  // 1. Direct post URL in browser address bar (instant)
   if (isTikTokUrl(location.href)) {
     return location.href;
   }
 
-  // Look for currently active modal or video link first
+  // 2. Open Modal post viewer (e.g. desktop full view)
   const activeModalAnchor = document.querySelector<HTMLAnchorElement>(
-    '[data-e2e="browse-video"] a[href*="/video/"], [data-e2e="feed-active"] a[href*="/video/"]',
+    '[data-e2e="browse-video"] a[href*="/video/"], [data-e2e="browse-video"] a[href*="/photo/"]',
   );
   if (activeModalAnchor) {
     const href = getAbsoluteHref(activeModalAnchor.getAttribute("href"));
     if (isTikTokUrl(href)) return href;
   }
 
-  // Scan anchors in viewport with low overhead
-  const anchors = document.querySelectorAll<HTMLAnchorElement>('a[href*="/video/"], a[href*="/photo/"]');
-  let bestUrl = "";
-  let bestScore = Number.NEGATIVE_INFINITY;
-  const maxToInspect = Math.min(anchors.length, 25);
+  // 3. Fast detection via active/playing video in viewport center
+  const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("video"));
+  const vh = window.innerHeight;
 
-  for (let i = 0; i < maxToInspect; i++) {
+  // Prefer video closest to vertical center
+  let bestVideoAnchorUrl = "";
+  let minCenterDistance = Number.POSITIVE_INFINITY;
+
+  for (const video of videos) {
+    const rect = video.getBoundingClientRect();
+    // Must be in vertical viewport
+    if (rect.bottom <= 0 || rect.top >= vh) continue;
+
+    const centerY = rect.top + rect.height / 2;
+    const distance = Math.abs(vh / 2 - centerY);
+
+    const isPlaying = !video.paused && video.readyState >= 2;
+    // Boost playing video
+    const weightedDistance = isPlaying ? distance * 0.5 : distance;
+
+    if (weightedDistance < minCenterDistance) {
+      // Find post container
+      const container =
+        video.closest<HTMLElement>(
+          '[data-e2e="recommend-list-item-container"], [data-e2e="feed-active"], article, [class*="DivItemContainer"], [class*="ItemContainer"]',
+        ) ||
+        video.parentElement?.parentElement?.parentElement ||
+        null;
+
+      if (container) {
+        const anchor = container.querySelector<HTMLAnchorElement>(
+          'a[href*="/video/"], a[href*="/photo/"]',
+        );
+        if (anchor) {
+          const href = getAbsoluteHref(anchor.getAttribute("href"));
+          if (isTikTokUrl(href)) {
+            minCenterDistance = weightedDistance;
+            bestVideoAnchorUrl = href;
+          }
+        }
+      }
+    }
+  }
+
+  if (bestVideoAnchorUrl) {
+    return bestVideoAnchorUrl;
+  }
+
+  // 4. Fallback: inspect viewport anchors with small bounded search
+  const anchors = document.querySelectorAll<HTMLAnchorElement>(
+    'a[href*="/video/"], a[href*="/photo/"]',
+  );
+  let bestScore = Number.NEGATIVE_INFINITY;
+  let bestUrl = "";
+  const maxInspect = Math.min(anchors.length, 20);
+
+  for (let i = 0; i < maxInspect; i++) {
     const anchor = anchors[i];
-    const score = scoreAnchor(anchor);
-    if (score > bestScore) {
-      bestScore = score;
-      bestUrl = getAbsoluteHref(anchor.getAttribute("href"));
+    const rect = anchor.getBoundingClientRect();
+    if (rect.bottom > 0 && rect.top < vh && rect.width > 0 && rect.height > 0) {
+      const centerY = rect.top + rect.height / 2;
+      const score = 1000 - Math.abs(vh / 2 - centerY);
+      if (score > bestScore) {
+        bestScore = score;
+        bestUrl = getAbsoluteHref(anchor.getAttribute("href"));
+      }
     }
   }
 
@@ -117,34 +155,36 @@ function renderChip(url: string): void {
   chip.type = "button";
   chip.innerHTML = `
     <span style="display:inline-flex;align-items:center;gap:8px;">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.89 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.32 0 .63.05.92.14V9.45a6.35 6.35 0 0 0-.92-.07A6.34 6.34 0 0 0 3 15.72a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V9.08a8.28 8.28 0 0 0 4.91 1.6V7.23a4.85 4.85 0 0 1-1-.54z"/>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
       </svg>
-      <span>Download Ready</span>
+      <span>Download</span>
     </span>
   `;
   chip.style.position = "fixed";
   chip.style.right = "24px";
   chip.style.bottom = "24px";
   chip.style.zIndex = "2147483646";
-  chip.style.padding = "10px 18px";
+  chip.style.padding = "9px 16px";
   chip.style.borderRadius = "999px";
-  chip.style.border = "1px solid rgba(37, 244, 238, 0.4)";
-  chip.style.background = "linear-gradient(135deg, rgba(18, 22, 32, 0.95), rgba(28, 34, 48, 0.95))";
+  chip.style.border = "1px solid rgba(255, 255, 255, 0.25)";
+  chip.style.background = "rgba(10, 10, 10, 0.9)";
   chip.style.backdropFilter = "blur(12px)";
   chip.style.color = "#ffffff";
-  chip.style.font = '600 13px system-ui, -apple-system, sans-serif';
-  chip.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.45), 0 0 16px rgba(37, 244, 238, 0.25)";
+  chip.style.font = '600 12px system-ui, -apple-system, sans-serif';
+  chip.style.boxShadow = "0 8px 24px rgba(0, 0, 0, 0.6)";
   chip.style.cursor = "pointer";
-  chip.style.transition = "transform 0.15s ease, box-shadow 0.15s ease";
+  chip.style.transition = "all 0.15s ease";
 
   chip.onmouseenter = () => {
-    chip.style.transform = "translateY(-2px) scale(1.02)";
-    chip.style.boxShadow = "0 14px 36px rgba(0, 0, 0, 0.5), 0 0 22px rgba(254, 44, 85, 0.35)";
+    chip.style.background = "#ffffff";
+    chip.style.color = "#000000";
+    chip.style.transform = "translateY(-2px)";
   };
   chip.onmouseleave = () => {
-    chip.style.transform = "translateY(0) scale(1)";
-    chip.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.45), 0 0 16px rgba(37, 244, 238, 0.25)";
+    chip.style.background = "rgba(10, 10, 10, 0.9)";
+    chip.style.color = "#ffffff";
+    chip.style.transform = "translateY(0)";
   };
 
   chip.addEventListener("click", async () => {
@@ -165,13 +205,13 @@ function renderChip(url: string): void {
         chip.disabled = false;
         chip.innerHTML = `
           <span style="display:inline-flex;align-items:center;gap:8px;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.89 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.32 0 .63.05.92.14V9.45a6.35 6.35 0 0 0-.92-.07A6.34 6.34 0 0 0 3 15.72a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V9.08a8.28 8.28 0 0 0 4.91 1.6V7.23a4.85 4.85 0 0 1-1-.54z"/>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
             </svg>
-            <span>Download Ready</span>
+            <span>Download</span>
           </span>
         `;
-      }, 2500);
+      }, 2000);
     }
   });
 
@@ -215,48 +255,36 @@ function scheduleRefresh(): void {
     window.clearTimeout(refreshTimeoutId);
   }
 
+  // Fast 100ms response time on scrolling / navigation
   refreshTimeoutId = window.setTimeout(() => {
     refreshTimeoutId = null;
     void processPageState();
-  }, 250);
+  }, 100);
 }
 
 function observeUrlChanges(): void {
-  // Intercept client-side SPA navigation safely
-  const originalPushState = history.pushState;
-  history.pushState = function (...args) {
-    const result = originalPushState.apply(this, args);
-    scheduleRefresh();
-    return result;
-  };
-
-  const originalReplaceState = history.replaceState;
-  history.replaceState = function (...args) {
-    const result = originalReplaceState.apply(this, args);
-    scheduleRefresh();
-    return result;
-  };
-
   window.addEventListener("popstate", scheduleRefresh);
   window.addEventListener("hashchange", scheduleRefresh);
 
-  // Light mutation observer on top-level body only (not entire subtree)
-  const observer = new MutationObserver(() => {
-    if (location.href !== currentPageUrl) {
-      scheduleRefresh();
-    }
-  });
+  // Instant scroll & keyboard navigation response
+  window.addEventListener("scroll", scheduleRefresh, { passive: true });
+  window.addEventListener("wheel", scheduleRefresh, { passive: true });
+  window.addEventListener(
+    "keydown",
+    (e) => {
+      if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", "j", "k", " "].includes(e.key)) {
+        scheduleRefresh();
+      }
+    },
+    { passive: true },
+  );
 
-  if (document.body) {
-    observer.observe(document.body, { childList: true });
-  }
-
-  // Periodic lightweight check every 800ms
+  // Rapid 250ms interval check for SPA state changes
   locationPollId = window.setInterval(() => {
     if (location.href !== currentPageUrl) {
       scheduleRefresh();
     }
-  }, 800);
+  }, 250);
 }
 
 async function init(): Promise<void> {

@@ -22,6 +22,9 @@ export interface ResolvedMedia {
   normalizedUrl: string;
   contentType: ContentType;
   author: string;
+  authorNickname?: string | null;
+  authorAvatar?: string | null;
+  title?: string | null;
   id: string;
   video: MediaAsset | null;
   images: MediaAsset[];

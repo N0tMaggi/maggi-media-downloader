@@ -30,6 +30,7 @@ interface PopupState {
   recentJobs: RecentJob[];
   sourceMode: "active-tab" | "manual";
   sourceUrl: string;
+  detectedUrl: string;
   busy: boolean;
   activePhotoIndex: number;
   promptSaveAs: boolean;
@@ -39,7 +40,7 @@ const state: PopupState = {
   activeTab: "preview",
   status: {
     tone: "default",
-    text: "Ready.",
+    text: "Idle",
   },
   media: null,
   cacheHit: false,
@@ -48,6 +49,7 @@ const state: PopupState = {
   recentJobs: [],
   sourceMode: "active-tab",
   sourceUrl: "",
+  detectedUrl: "",
   busy: false,
   activePhotoIndex: 0,
   promptSaveAs: false,
@@ -115,8 +117,8 @@ function updateAudioDeckState(): void {
 
   if (toggleBtn) {
     toggleBtn.innerHTML = isAudioPlaying
-      ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`
-      : `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`
+      : `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
   }
 
   eqBars.forEach((bar) => {
@@ -133,33 +135,71 @@ function getExpectedFilename(kind: DownloadKind, index?: number): string {
   return buildDownloadFilename(state.settings.filenameTemplate, state.media, kind, index);
 }
 
+function getSightSummary(): { dotClass: string; label: string; badge: string } {
+  if (state.busy) {
+    return {
+      dotClass: "sight-dot fetching",
+      label: state.detectedUrl ? `Fetching: ${state.detectedUrl.slice(0, 32)}...` : "Fetching media stream...",
+      badge: "BUSY",
+    };
+  }
+
+  if (state.media) {
+    const typeLabel = describeContentType(state.media.contentType);
+    return {
+      dotClass: "sight-dot active",
+      label: `● Seeing @${state.media.author} (${typeLabel})`,
+      badge: state.cacheHit ? `CACHED ${Math.round(state.cacheAge / 1000)}S` : "LIVE",
+    };
+  }
+
+  if (state.detectedUrl) {
+    return {
+      dotClass: "sight-dot active",
+      label: `Spotted: ${state.detectedUrl.slice(0, 32)}...`,
+      badge: "DETECTED",
+    };
+  }
+
+  return {
+    dotClass: "sight-dot",
+    label: "No TikTok post in current tab",
+    badge: "IDLE",
+  };
+}
+
 function renderHeader(): string {
+  const sight = getSightSummary();
+
   return `
     <header class="app-header">
-      <div class="brand">
-        <div class="brand-icon-wrapper">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.89 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.32 0 .63.05.92.14V9.45a6.35 6.35 0 0 0-.92-.07A6.34 6.34 0 0 0 3 15.72a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V9.08a8.28 8.28 0 0 0 4.91 1.6V7.23a4.85 4.85 0 0 1-1-.54z"/>
-          </svg>
+      <div class="header-top">
+        <div class="brand">
+          <div class="brand-icon-box">M</div>
+          <span class="brand-title">MEDIA DL</span>
         </div>
-        <div class="brand-title">
-          <span>Maggi Media DL</span>
-          <span class="brand-badge">PRO</span>
+        <div class="header-actions">
+          <button class="icon-btn" id="refreshBtn" title="Re-scan / Refresh" type="button" ${state.busy ? "disabled" : ""}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+          </button>
+          <button class="icon-btn" id="settingsBtn" title="Extension Settings" type="button">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
         </div>
       </div>
-      <div class="header-actions">
-        <button class="icon-btn" id="refreshBtn" title="Refresh Post" type="button" ${state.busy ? "disabled" : ""}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-          </svg>
-        </button>
-        <button class="icon-btn" id="settingsBtn" title="Extension Settings" type="button">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-        </button>
+
+      <div class="header-sight-indicator">
+        <div class="sight-status">
+          <span class="${sight.dotClass}"></span>
+          <span class="sight-label">${sight.label}</span>
+        </div>
+        <span class="sight-badge">${sight.badge}</span>
       </div>
     </header>
   `;
@@ -169,52 +209,15 @@ function renderTabs(): string {
   return `
     <nav class="nav-tabs">
       <button class="tab-btn ${state.activeTab === "preview" ? "active" : ""}" data-tab="preview" type="button">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polygon points="5 3 19 12 5 21 5 3"></polygon>
-        </svg>
         <span>Preview</span>
       </button>
       <button class="tab-btn ${state.activeTab === "manual" ? "active" : ""}" data-tab="manual" type="button">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-        </svg>
         <span>Direct URL</span>
       </button>
       <button class="tab-btn ${state.activeTab === "history" ? "active" : ""}" data-tab="history" type="button">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
         <span>History (${state.recentJobs.length})</span>
       </button>
     </nav>
-  `;
-}
-
-function renderStatusBar(): string {
-  const dotClass = state.busy
-    ? "status-dot pulse"
-    : state.status.tone === "success"
-      ? "status-dot success"
-      : state.status.tone === "error"
-        ? "status-dot error"
-        : "status-dot";
-
-  const cacheBadge = state.media
-    ? state.cacheHit
-      ? `<span class="status-badge cached">⚡ Cached ${Math.round(state.cacheAge / 1000)}s</span>`
-      : `<span class="status-badge">🌐 Network</span>`
-    : "";
-
-  return `
-    <div class="status-bar">
-      <div class="status-left">
-        <span class="${dotClass}"></span>
-        <span class="status-text">${state.status.text}</span>
-      </div>
-      ${cacheBadge}
-    </div>
   `;
 }
 
@@ -260,10 +263,10 @@ function renderMediaPreview(media: ResolvedMedia): string {
             </div>
             <div class="carousel-nav">
               <button class="carousel-btn" id="prevPhotoBtn" type="button" ${state.activePhotoIndex === 0 ? "disabled" : ""}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
               </button>
               <button class="carousel-btn" id="nextPhotoBtn" type="button" ${state.activePhotoIndex === total - 1 ? "disabled" : ""}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
               </button>
             </div>
           </div>
@@ -275,7 +278,7 @@ function renderMediaPreview(media: ResolvedMedia): string {
 
   return `
     <div class="empty-state">
-      <div class="empty-desc">No visual stream available for this post.</div>
+      <div class="empty-desc">No video or image stream found.</div>
     </div>
   `;
 }
@@ -287,7 +290,7 @@ function renderAudioDeck(media: ResolvedMedia): string {
     <div class="audio-deck">
       <div class="audio-info">
         <button class="audio-play-toggle" id="audioPlayBtn" type="button" title="Play audio preview">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
             <path d="M8 5v14l11-7z"/>
           </svg>
         </button>
@@ -307,22 +310,30 @@ function renderAudioDeck(media: ResolvedMedia): string {
 }
 
 function renderPreviewTab(): string {
+  if (state.busy && !state.media) {
+    return `
+      <div class="card">
+        <div class="empty-state">
+          <div class="loading-spinner"></div>
+          <div class="empty-title">Fetching Media Details</div>
+          <p class="empty-desc">Connecting to api.maggi.dev to extract clean stream files...</p>
+        </div>
+      </div>
+    `;
+  }
+
   if (!state.media) {
     return `
       <div class="card">
         <div class="empty-state">
           <div class="empty-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polygon points="5 3 19 12 5 21 5 3"></polygon>
             </svg>
           </div>
-          <div class="empty-title">No TikTok Post Detected</div>
-          <p class="empty-desc">Open a TikTok video or photo post in your active browser tab, or paste a link below.</p>
+          <div class="empty-title">No TikTok Post Spotted</div>
+          <p class="empty-desc">Open a TikTok video or photo post in the browser, or paste a link below.</p>
           <button class="btn-primary" id="pasteFromClipboardBtn" type="button">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-            </svg>
             <span>Paste from Clipboard</span>
           </button>
         </div>
@@ -339,27 +350,28 @@ function renderPreviewTab(): string {
       ? getExpectedFilename("images", state.activePhotoIndex)
       : getExpectedFilename("audio");
 
+  const avatarMarkup = media.authorAvatar
+    ? `<img class="author-avatar-img" src="${media.authorAvatar}" alt="@${media.author}" />`
+    : `<div class="author-avatar-fallback">${media.author.slice(0, 1).toUpperCase()}</div>`;
+
   return `
     <div class="card">
       <div class="post-header">
         <a class="author-chip" href="${media.sourceUrl}" target="_blank" title="Open on TikTok">
-          <div class="author-avatar">${media.author.slice(0, 1).toUpperCase()}</div>
+          ${avatarMarkup}
           <div class="author-info">
             <div class="author-name">
               <span>@${media.author}</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--accent-cyan)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
             </div>
-            <span class="post-type-tag">${describeContentType(media.contentType)} • ${media.id}</span>
+            ${media.title ? `<div class="author-title-caption" title="${media.title}">${media.title}</div>` : ""}
           </div>
         </a>
-        <div class="post-actions">
-          <button class="icon-btn" id="copyUrlBtn" title="Copy TikTok URL" type="button">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-          </button>
-        </div>
+        <button class="icon-btn" id="copyUrlBtn" title="Copy TikTok URL" type="button">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
       </div>
 
       ${renderMediaPreview(media)}
@@ -370,8 +382,7 @@ function renderPreviewTab(): string {
           isVideo
             ? `
           <button class="btn-primary" id="downloadVideoBtn" type="button" ${state.busy ? "disabled" : ""}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            <span>Download Video (HD)</span>
+            <span>Download Video</span>
           </button>
         `
             : ""
@@ -381,11 +392,9 @@ function renderPreviewTab(): string {
           isImages
             ? `
           <button class="btn-secondary" id="downloadCurrentPhotoBtn" type="button" ${state.busy ? "disabled" : ""}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             <span>Slide #${state.activePhotoIndex + 1}</span>
           </button>
           <button class="btn-primary" id="downloadAllPhotosBtn" type="button" ${state.busy ? "disabled" : ""}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
             <span>All (${media.images.length}) Photos</span>
           </button>
         `
@@ -396,7 +405,6 @@ function renderPreviewTab(): string {
           media.music
             ? `
           <button class="btn-secondary" id="downloadAudioBtn" type="button" ${state.busy ? "disabled" : ""}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
             <span>Download Audio (MP3)</span>
           </button>
         `
@@ -436,10 +444,6 @@ function renderManualTab(): string {
           </button>
         </div>
         <button class="btn-secondary" id="clipboardFillBtn" type="button">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-          </svg>
           <span>Paste Clipboard URL</span>
         </button>
       </div>
@@ -452,14 +456,8 @@ function renderHistoryTab(): string {
     return `
       <div class="card">
         <div class="empty-state">
-          <div class="empty-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-          </div>
           <div class="empty-title">No Recent Downloads</div>
-          <p class="empty-desc">Your downloaded TikTok videos, audio tracks, and photo carousels will appear here.</p>
+          <p class="empty-desc">Your downloaded media files will appear here.</p>
         </div>
       </div>
     `;
@@ -478,7 +476,7 @@ function renderHistoryTab(): string {
           </div>
         </div>
         <button class="icon-btn" data-copy-history="${job.sourceUrl}" title="Copy URL" type="button">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
           </svg>
@@ -500,7 +498,6 @@ function render(): void {
     <div class="shell">
       ${renderHeader()}
       ${renderTabs()}
-      ${renderStatusBar()}
       ${
         state.activeTab === "preview"
           ? renderPreviewTab()
@@ -517,22 +514,15 @@ function render(): void {
 
 function setStatus(text: string, tone: PopupState["status"]["tone"] = "default"): void {
   state.status = { text, tone };
-  const statusBar = document.querySelector(".status-bar");
-  if (statusBar) {
-    const dot = statusBar.querySelector(".status-dot");
-    const textEl = statusBar.querySelector(".status-text");
-    if (dot) {
-      dot.className = state.busy
-        ? "status-dot pulse"
-        : tone === "success"
-          ? "status-dot success"
-          : tone === "error"
-            ? "status-dot error"
-            : "status-dot";
-    }
-    if (textEl) {
-      textEl.textContent = text;
-    }
+  const label = document.querySelector(".sight-label");
+  const badge = document.querySelector(".sight-badge");
+  const dot = document.querySelector(".sight-dot");
+
+  if (label && badge && dot) {
+    const sight = getSightSummary();
+    label.textContent = text ? `${sight.label} • ${text}` : sight.label;
+    badge.textContent = sight.badge;
+    dot.className = sight.dotClass;
   } else {
     render();
   }
@@ -569,8 +559,9 @@ async function resolveUrl(url: string, sourceMode: PopupState["sourceMode"]): Pr
   state.busy = true;
   state.sourceMode = sourceMode;
   state.sourceUrl = url;
+  state.detectedUrl = url;
   state.activePhotoIndex = 0;
-  setStatus("Fetching media details...", "busy");
+  render();
 
   try {
     const result = await sendMessage<ResolveResult>({
@@ -582,7 +573,6 @@ async function resolveUrl(url: string, sourceMode: PopupState["sourceMode"]): Pr
     state.cacheHit = result.cacheHit;
     state.cacheAge = result.cacheAge;
     state.activeTab = "preview";
-    setStatus(result.cacheHit ? "Loaded from cache ⚡" : "Media ready for download.", "success");
   } catch (error) {
     state.media = null;
     setStatus(error instanceof Error ? error.message : "Failed to load post.", "error");
@@ -597,6 +587,7 @@ async function loadFromActiveTab(): Promise<void> {
   const activeUrl = tab?.url || "";
 
   if (activeUrl && isTikTokUrl(activeUrl)) {
+    state.detectedUrl = activeUrl;
     await resolveUrl(activeUrl, "active-tab");
     return;
   }
@@ -605,18 +596,25 @@ async function loadFromActiveTab(): Promise<void> {
     type: "page/getContext",
   });
   if (pageContextResponse.context?.normalizedUrl) {
+    state.detectedUrl = pageContextResponse.context.normalizedUrl;
     await resolveUrl(pageContextResponse.context.normalizedUrl, "active-tab");
     return;
   }
 
   state.sourceMode = "manual";
   state.sourceUrl = "";
+  state.detectedUrl = "";
   state.media = null;
-  setStatus("No active TikTok post detected.", "default");
+  render();
 }
 
 async function handleContextUpdate(context: PageContext): Promise<void> {
-  if (state.sourceMode !== "active-tab" || state.busy) return;
+  state.detectedUrl = context.normalizedUrl;
+  if (state.sourceMode !== "active-tab" || state.busy) {
+    render();
+    return;
+  }
+
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab?.id !== context.tabId) return;
   if (state.sourceUrl === context.normalizedUrl && state.media) return;
@@ -631,10 +629,10 @@ async function handleContextRemoved(tabId: number): Promise<void> {
 
   stopAudioPreview();
   state.sourceUrl = "";
+  state.detectedUrl = "";
   state.media = null;
   state.cacheHit = false;
   state.cacheAge = 0;
-  setStatus("No TikTok post on current page.", "default");
   render();
 }
 
@@ -653,7 +651,7 @@ async function startDownload(kind: DownloadKind, itemIndex?: number): Promise<vo
   if (!state.media) return;
 
   state.busy = true;
-  setStatus(`Initiating ${kind} download...`, "busy");
+  render();
   try {
     const result = await sendMessage<{ downloadIds: number[] }>({
       type: "downloads/start",
@@ -666,7 +664,7 @@ async function startDownload(kind: DownloadKind, itemIndex?: number): Promise<vo
     });
     await loadRecentJobs();
     const count = result.downloadIds.length;
-    setStatus(`Started download for ${count} file${count > 1 ? "s" : ""} ✓`, "success");
+    setStatus(`Downloaded ${count} file${count > 1 ? "s" : ""} ✓`, "success");
   } catch (error) {
     setStatus(error instanceof Error ? error.message : "Download failed.", "error");
   } finally {
@@ -704,7 +702,7 @@ function bindEvents(): void {
   document.querySelector<HTMLButtonElement>("#copyUrlBtn")?.addEventListener("click", async () => {
     if (state.media?.sourceUrl) {
       await navigator.clipboard.writeText(state.media.sourceUrl);
-      setStatus("TikTok URL copied to clipboard! ✓", "success");
+      setStatus("Copied to clipboard! ✓", "success");
     }
   });
 
@@ -807,7 +805,7 @@ function bindEvents(): void {
       const url = btn.dataset.copyHistory || "";
       if (url) {
         await navigator.clipboard.writeText(url);
-        setStatus("Source link copied to clipboard! ✓", "success");
+        setStatus("Copied to clipboard! ✓", "success");
       }
     });
   });
@@ -823,10 +821,8 @@ async function init(): Promise<void> {
     await loadFromActiveTab();
   } else {
     state.sourceMode = "manual";
-    setStatus("Auto-detection disabled. Paste a link to download.", "default");
+    render();
   }
-
-  render();
 }
 
 init().catch((error) => {
