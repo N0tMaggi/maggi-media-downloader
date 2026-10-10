@@ -2,10 +2,10 @@ import type { ContentType } from "./types";
 
 const PATTERNS = {
   video:
-    /^https?:\/\/(www\.)?tiktok\.com\/@[\w.-]+\/video\/\d+(?:[/?].*)?$/i,
+    /^https?:\/\/(?:www\.|m\.)?tiktok\.com\/(?:@[\w.-]+\/)?(?:video|v)\/\d+(?:[/?].*)?$/i,
   photo:
-    /^https?:\/\/(www\.)?tiktok\.com\/@[\w.-]+\/photo\/\d+(?:[/?].*)?$/i,
-  short: /^https?:\/\/(vm|m)\.tiktok\.com\/[\w/]+(?:\?.*)?$/i,
+    /^https?:\/\/(?:www\.|m\.)?tiktok\.com\/(?:@[\w.-]+\/)?photo\/\d+(?:[/?].*)?$/i,
+  short: /^https?:\/\/(vm|vt|m)\.tiktok\.com\/[\w/]+(?:\?.*)?$/i,
 };
 
 export function normalizeTikTokUrl(url: string): string {

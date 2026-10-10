@@ -1,10 +1,11 @@
 import { createLogger, setDebugLogging } from "../shared/logger";
 import { detectTikTokContentType, isTikTokUrl, normalizeTikTokUrl } from "../shared/tiktok";
 import type { MessageResponse, SettingsResponse } from "../shared/messages";
-import type { ExtensionSettings } from "../shared/types";
+import type { ExtensionSettings, ResolveResult } from "../shared/types";
 
 const logger = createLogger("content");
 const CHIP_ID = "maggi-media-downloader-chip";
+const INJECTED_CLASS = "maggi-injected-action-item";
 
 let currentPageUrl = "";
 let currentDetectedUrl = "";
@@ -16,8 +17,8 @@ async function sendMessage<T>(message: object): Promise<T> {
   const response = (await chrome.runtime.sendMessage(
     message,
   )) as MessageResponse<T>;
-  if (!response.ok) {
-    throw new Error(response.error);
+  if (!response || !response.ok) {
+    throw new Error(response ? response.error : "Failed to communicate with extension background.");
   }
   return response.data;
 }
@@ -28,7 +29,7 @@ async function loadSettings(): Promise<void> {
     settings = response.settings;
     setDebugLogging(settings.debugLogging);
   } catch {
-    // Extension may be reloading
+    // Background may be temporarily unavailable
   }
 }
 
@@ -71,26 +72,71 @@ function getAbsoluteHref(value: string | null): string {
   }
 }
 
+export function extractPostUrlFromContainer(container: HTMLElement): string {
+  // 1. Direct anchor with /video/ or /photo/ or /v/
+  const anchors = Array.from(
+    container.querySelectorAll<HTMLAnchorElement>(
+      'a[href*="/video/"], a[href*="/photo/"], a[href*="/v/"]',
+    ),
+  );
+  for (const anchor of anchors) {
+    const rawHref = anchor.getAttribute("href");
+    if (!rawHref) continue;
+    const absHref = getAbsoluteHref(rawHref);
+    if (isTikTokUrl(absHref)) return absHref;
+
+    const match = rawHref.match(/(?:@[\w.-]+\/)?(?:video|v|photo)\/\d+/);
+    if (match) {
+      return `https://www.tiktok.com/${match[0].startsWith("@") ? match[0] : `@tiktok/${match[0]}`}`;
+    }
+  }
+
+  // 2. Check XGPlayer wrapper id (e.g. xgwrapper-0-7412345678901234567)
+  const xgElement = container.matches('[id*="xgwrapper"]')
+    ? container
+    : container.querySelector('[id*="xgwrapper"]');
+  if (xgElement) {
+    const idMatch = xgElement.id.match(/\d{16,21}/);
+    if (idMatch) {
+      const authorAnchor = container.querySelector<HTMLAnchorElement>('a[href^="/@"]');
+      const author = authorAnchor?.getAttribute("href")?.replace(/^\//, "") || "@tiktok";
+      return `https://www.tiktok.com/${author.startsWith("@") ? author : `@${author}`}/video/${idMatch[0]}`;
+    }
+  }
+
+  // 3. Search all element attributes in container for video ID
+  const allElements = Array.from(container.querySelectorAll<HTMLElement>("*"));
+  for (const el of allElements) {
+    for (const attr of el.getAttributeNames()) {
+      const val = el.getAttribute(attr);
+      if (val && /^\d{18,20}$/.test(val)) {
+        const authorAnchor = container.querySelector<HTMLAnchorElement>('a[href^="/@"]');
+        const author = authorAnchor?.getAttribute("href")?.replace(/^\//, "") || "@tiktok";
+        return `https://www.tiktok.com/${author.startsWith("@") ? author : `@${author}`}/video/${val}`;
+      }
+    }
+  }
+
+  return "";
+}
+
 function detectActiveTikTokUrl(): string {
-  // 1. Direct post URL in browser address bar (instant)
+  // 1. Direct post URL in browser address bar (when on /@user/video/123)
   if (isTikTokUrl(location.href)) {
     return location.href;
   }
 
-  // 2. Open Modal post viewer (e.g. desktop full view)
-  const activeModalAnchor = document.querySelector<HTMLAnchorElement>(
-    '[data-e2e="browse-video"] a[href*="/video/"], [data-e2e="browse-video"] a[href*="/photo/"]',
-  );
-  if (activeModalAnchor) {
-    const href = getAbsoluteHref(activeModalAnchor.getAttribute("href"));
-    if (isTikTokUrl(href)) return href;
+  // 2. Open Modal post viewer (e.g. desktop full view popup)
+  const modal = document.querySelector<HTMLElement>('[data-e2e="browse-video"]');
+  if (modal) {
+    const modalUrl = extractPostUrlFromContainer(modal);
+    if (modalUrl) return modalUrl;
   }
 
   // 3. Fast detection via active/playing video in viewport center
   const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("video"));
   const vh = window.innerHeight;
 
-  // Prefer video closest to vertical center
   let bestVideoAnchorUrl = "";
   let minCenterDistance = Number.POSITIVE_INFINITY;
 
@@ -103,28 +149,21 @@ function detectActiveTikTokUrl(): string {
     const distance = Math.abs(vh / 2 - centerY);
 
     const isPlaying = !video.paused && video.readyState >= 2;
-    // Boost playing video
-    const weightedDistance = isPlaying ? distance * 0.5 : distance;
+    const weightedDistance = isPlaying ? distance * 0.4 : distance;
 
     if (weightedDistance < minCenterDistance) {
-      // Find post container
       const container =
-        video.closest<HTMLElement>(
+        (video.closest(
           '[data-e2e="recommend-list-item-container"], [data-e2e="feed-active"], article, [class*="DivItemContainer"], [class*="ItemContainer"]',
-        ) ||
+        ) as HTMLElement | null) ||
         video.parentElement?.parentElement?.parentElement ||
         null;
 
       if (container) {
-        const anchor = container.querySelector<HTMLAnchorElement>(
-          'a[href*="/video/"], a[href*="/photo/"]',
-        );
-        if (anchor) {
-          const href = getAbsoluteHref(anchor.getAttribute("href"));
-          if (isTikTokUrl(href)) {
-            minCenterDistance = weightedDistance;
-            bestVideoAnchorUrl = href;
-          }
+        const postUrl = extractPostUrlFromContainer(container);
+        if (postUrl) {
+          minCenterDistance = weightedDistance;
+          bestVideoAnchorUrl = postUrl;
         }
       }
     }
@@ -134,28 +173,196 @@ function detectActiveTikTokUrl(): string {
     return bestVideoAnchorUrl;
   }
 
-  // 4. Fallback: inspect viewport anchors with small bounded search
-  const anchors = document.querySelectorAll<HTMLAnchorElement>(
-    'a[href*="/video/"], a[href*="/photo/"]',
+  // 4. Fallback: scan any item container on page
+  const containers = Array.from(
+    document.querySelectorAll<HTMLElement>(
+      '[data-e2e="recommend-list-item-container"], article, [class*="DivItemContainer"]',
+    ),
   );
-  let bestScore = Number.NEGATIVE_INFINITY;
-  let bestUrl = "";
-  const maxInspect = Math.min(anchors.length, 20);
-
-  for (let i = 0; i < maxInspect; i++) {
-    const anchor = anchors[i];
-    const rect = anchor.getBoundingClientRect();
-    if (rect.bottom > 0 && rect.top < vh && rect.width > 0 && rect.height > 0) {
-      const centerY = rect.top + rect.height / 2;
-      const score = 1000 - Math.abs(vh / 2 - centerY);
-      if (score > bestScore) {
-        bestScore = score;
-        bestUrl = getAbsoluteHref(anchor.getAttribute("href"));
-      }
+  for (const c of containers) {
+    const rect = c.getBoundingClientRect();
+    if (rect.bottom > 0 && rect.top < vh) {
+      const url = extractPostUrlFromContainer(c);
+      if (url) return url;
     }
   }
 
-  return bestUrl;
+  return "";
+}
+
+function injectDownloadButtons(): void {
+  // Find all Share buttons in TikTok's action bar
+  const shareButtons = Array.from(
+    document.querySelectorAll<HTMLButtonElement>(
+      'button[data-e2e="share-icon"], button[data-e2e="feed-share-icon"], button[aria-label*="Share"], button[aria-label*="Teilen"]',
+    ),
+  );
+
+  for (const shareBtn of shareButtons) {
+    const shareWrapper =
+      (shareBtn.closest(
+        '[class*="ActionItem"], [class*="DivActionItemContainer"], [class*="ActionItemContainer"]',
+      ) as HTMLElement | null) || shareBtn.parentElement;
+
+    if (!shareWrapper) continue;
+    const parentBar = shareWrapper.parentElement;
+    if (!parentBar) continue;
+
+    // Avoid duplicate injections
+    if (parentBar.querySelector(`.${INJECTED_CLASS}`)) continue;
+
+    const itemContainer =
+      (shareBtn.closest(
+        '[data-e2e="recommend-list-item-container"], [data-e2e="browse-video"], article, [class*="DivItemContainer"], [class*="ItemContainer"]',
+      ) as HTMLElement | null) || parentBar.parentElement?.parentElement;
+
+    // Create action item matching TikTok's native style
+    const actionWrapper = document.createElement("div");
+    actionWrapper.className = INJECTED_CLASS;
+    actionWrapper.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      margin-top: 10px;
+      user-select: none;
+      z-index: 10;
+    `;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.setAttribute("aria-label", "Download without Watermark");
+    btn.setAttribute("title", "Download without Watermark");
+    btn.style.cssText = `
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    `;
+    btn.innerHTML = `
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+    `;
+
+    const label = document.createElement("span");
+    label.innerText = "Download";
+    label.style.cssText = `
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 5px;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: -0.01em;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+    `;
+
+    btn.onmouseenter = () => {
+      btn.style.transform = "scale(1.08)";
+      btn.style.background = "#ffffff";
+      btn.style.color = "#000000";
+    };
+    btn.onmouseleave = () => {
+      btn.style.transform = "scale(1)";
+      btn.style.background = "rgba(255, 255, 255, 0.12)";
+      btn.style.color = "#ffffff";
+    };
+
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+
+      if (btn.disabled) return;
+
+      let postUrl = itemContainer ? extractPostUrlFromContainer(itemContainer) : "";
+      if (!postUrl) {
+        postUrl = detectActiveTikTokUrl();
+      }
+      if (!postUrl && isTikTokUrl(location.href)) {
+        postUrl = location.href;
+      }
+
+      if (!postUrl) {
+        label.innerText = "No URL";
+        setTimeout(() => { label.innerText = "Download"; }, 2000);
+        return;
+      }
+
+      btn.disabled = true;
+      label.innerText = "Fetching...";
+      btn.style.opacity = "0.7";
+
+      try {
+        const resolveRes = await sendMessage<ResolveResult>({
+          type: "media/resolve",
+          url: postUrl,
+          reason: "in-page-button",
+        });
+
+        label.innerText = "Saving...";
+
+        await sendMessage({
+          type: "downloads/start",
+          request: {
+            kind: resolveRes.media.contentType === "images" ? "images" : "video",
+            media: resolveRes.media,
+            saveAs: false,
+          },
+        });
+
+        label.innerText = "Saved ✓";
+        label.style.color = "#4ade80";
+        btn.style.borderColor = "#4ade80";
+        btn.innerHTML = `
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        `;
+      } catch (err) {
+        label.innerText = "Error";
+        label.style.color = "#f87171";
+        logger.error("In-page download failed", err);
+      } finally {
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.style.opacity = "1";
+          btn.style.borderColor = "rgba(255, 255, 255, 0.2)";
+          label.innerText = "Download";
+          label.style.color = "#ffffff";
+          btn.innerHTML = `
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          `;
+        }, 3000);
+      }
+    });
+
+    actionWrapper.appendChild(btn);
+    actionWrapper.appendChild(label);
+
+    // Insert right after the share wrapper in the action bar
+    if (shareWrapper.nextSibling) {
+      parentBar.insertBefore(actionWrapper, shareWrapper.nextSibling);
+    } else {
+      parentBar.appendChild(actionWrapper);
+    }
+  }
 }
 
 function renderChip(url: string): void {
@@ -236,6 +443,9 @@ async function processPageState(): Promise<void> {
   currentPageUrl = pageUrl;
   const detectedUrl = detectActiveTikTokUrl();
 
+  // Always keep injected buttons up to date on new DOM items
+  injectDownloadButtons();
+
   if (!detectedUrl) {
     if (currentDetectedUrl) {
       currentDetectedUrl = "";
@@ -291,12 +501,10 @@ function observeUrlChanges(): void {
     { passive: true },
   );
 
-  // Rapid 250ms interval check for SPA state changes
+  // Rapid 250ms interval check for SPA state changes and newly rendered videos
   locationPollId = window.setInterval(() => {
-    if (location.href !== currentPageUrl) {
-      scheduleRefresh();
-    }
-  }, 250);
+    scheduleRefresh();
+  }, 350);
 }
 
 async function init(): Promise<void> {
