@@ -78,12 +78,28 @@ export class MaggiProviderClient implements ProviderClient {
     requestUrl.searchParams.set("url", normalizedUrl);
     requestUrl.searchParams.set("api_key", "Demo");
 
-    const response = await fetch(requestUrl, { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error(`Provider request failed with HTTP ${response.status}.`);
-    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
 
-    const payload = (await response.json()) as ProviderApiPayload;
-    return mapProviderPayload(payload, normalizedUrl);
+    try {
+      const response = await fetch(requestUrl, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Provider request failed with HTTP ${response.status}.`);
+      }
+
+      const payload = (await response.json()) as ProviderApiPayload;
+      return mapProviderPayload(payload, normalizedUrl);
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("Resolution timed out after 12 seconds. Please check your connection.");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 }

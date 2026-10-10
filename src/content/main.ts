@@ -81,11 +81,23 @@ function detectActiveTikTokUrl(): string {
     return location.href;
   }
 
-  const anchors = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href*="/video/"], a[href*="/photo/"]'));
+  // Look for currently active modal or video link first
+  const activeModalAnchor = document.querySelector<HTMLAnchorElement>(
+    '[data-e2e="browse-video"] a[href*="/video/"], [data-e2e="feed-active"] a[href*="/video/"]',
+  );
+  if (activeModalAnchor) {
+    const href = getAbsoluteHref(activeModalAnchor.getAttribute("href"));
+    if (isTikTokUrl(href)) return href;
+  }
+
+  // Scan anchors in viewport with low overhead
+  const anchors = document.querySelectorAll<HTMLAnchorElement>('a[href*="/video/"], a[href*="/photo/"]');
   let bestUrl = "";
   let bestScore = Number.NEGATIVE_INFINITY;
+  const maxToInspect = Math.min(anchors.length, 25);
 
-  for (const anchor of anchors) {
+  for (let i = 0; i < maxToInspect; i++) {
+    const anchor = anchors[i];
     const score = scoreAnchor(anchor);
     if (score > bestScore) {
       bestScore = score;
@@ -103,39 +115,63 @@ function renderChip(url: string): void {
   const chip = document.createElement("button");
   chip.id = CHIP_ID;
   chip.type = "button";
-  chip.textContent = "Load post";
+  chip.innerHTML = `
+    <span style="display:inline-flex;align-items:center;gap:8px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.89 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.32 0 .63.05.92.14V9.45a6.35 6.35 0 0 0-.92-.07A6.34 6.34 0 0 0 3 15.72a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V9.08a8.28 8.28 0 0 0 4.91 1.6V7.23a4.85 4.85 0 0 1-1-.54z"/>
+      </svg>
+      <span>Download Ready</span>
+    </span>
+  `;
   chip.style.position = "fixed";
-  chip.style.right = "20px";
-  chip.style.bottom = "20px";
+  chip.style.right = "24px";
+  chip.style.bottom = "24px";
   chip.style.zIndex = "2147483646";
-  chip.style.padding = "12px 16px";
+  chip.style.padding = "10px 18px";
   chip.style.borderRadius = "999px";
-  chip.style.border = "1px solid rgba(255,255,255,0.2)";
-  chip.style.background = "linear-gradient(135deg, #f6d365, #f15a29)";
-  chip.style.color = "#151915";
-  chip.style.font = '700 13px "Segoe UI Variable Display", "Segoe UI", sans-serif';
-  chip.style.boxShadow = "0 16px 40px rgba(0,0,0,0.3)";
+  chip.style.border = "1px solid rgba(37, 244, 238, 0.4)";
+  chip.style.background = "linear-gradient(135deg, rgba(18, 22, 32, 0.95), rgba(28, 34, 48, 0.95))";
+  chip.style.backdropFilter = "blur(12px)";
+  chip.style.color = "#ffffff";
+  chip.style.font = '600 13px system-ui, -apple-system, sans-serif';
+  chip.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.45), 0 0 16px rgba(37, 244, 238, 0.25)";
   chip.style.cursor = "pointer";
+  chip.style.transition = "transform 0.15s ease, box-shadow 0.15s ease";
+
+  chip.onmouseenter = () => {
+    chip.style.transform = "translateY(-2px) scale(1.02)";
+    chip.style.boxShadow = "0 14px 36px rgba(0, 0, 0, 0.5), 0 0 22px rgba(254, 44, 85, 0.35)";
+  };
+  chip.onmouseleave = () => {
+    chip.style.transform = "translateY(0) scale(1)";
+    chip.style.boxShadow = "0 10px 30px rgba(0, 0, 0, 0.45), 0 0 16px rgba(37, 244, 238, 0.25)";
+  };
 
   chip.addEventListener("click", async () => {
     chip.disabled = true;
-    chip.textContent = "Preparing...";
+    chip.innerText = "Resolving...";
     try {
       await sendMessage({
         type: "media/resolve",
         url,
         reason: "page-action",
       });
-      chip.textContent = "Loaded";
+      chip.innerText = "Ready in Popup ✓";
     } catch (error) {
-      chip.textContent =
-        error instanceof Error ? `Error: ${error.message}` : "Error";
+      chip.innerText = error instanceof Error ? `Error: ${error.message}` : "Failed";
       logger.error("Page action failed", error);
     } finally {
       window.setTimeout(() => {
         chip.disabled = false;
-        chip.textContent = "Load post";
-      }, 2400);
+        chip.innerHTML = `
+          <span style="display:inline-flex;align-items:center;gap:8px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.89 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.32 0 .63.05.92.14V9.45a6.35 6.35 0 0 0-.92-.07A6.34 6.34 0 0 0 3 15.72a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V9.08a8.28 8.28 0 0 0 4.91 1.6V7.23a4.85 4.85 0 0 1-1-.54z"/>
+            </svg>
+            <span>Download Ready</span>
+          </span>
+        `;
+      }, 2500);
     }
   });
 
@@ -182,28 +218,45 @@ function scheduleRefresh(): void {
   refreshTimeoutId = window.setTimeout(() => {
     refreshTimeoutId = null;
     void processPageState();
-  }, 150);
+  }, 250);
 }
 
 function observeUrlChanges(): void {
-  const observer = new MutationObserver(() => {
+  // Intercept client-side SPA navigation safely
+  const originalPushState = history.pushState;
+  history.pushState = function (...args) {
+    const result = originalPushState.apply(this, args);
     scheduleRefresh();
-  });
+    return result;
+  };
 
-  observer.observe(document.documentElement, {
-    childList: true,
-    subtree: true,
-  });
+  const originalReplaceState = history.replaceState;
+  history.replaceState = function (...args) {
+    const result = originalReplaceState.apply(this, args);
+    scheduleRefresh();
+    return result;
+  };
 
   window.addEventListener("popstate", scheduleRefresh);
   window.addEventListener("hashchange", scheduleRefresh);
-  window.addEventListener("scroll", scheduleRefresh, { passive: true });
 
+  // Light mutation observer on top-level body only (not entire subtree)
+  const observer = new MutationObserver(() => {
+    if (location.href !== currentPageUrl) {
+      scheduleRefresh();
+    }
+  });
+
+  if (document.body) {
+    observer.observe(document.body, { childList: true });
+  }
+
+  // Periodic lightweight check every 800ms
   locationPollId = window.setInterval(() => {
     if (location.href !== currentPageUrl) {
       scheduleRefresh();
     }
-  }, 300);
+  }, 800);
 }
 
 async function init(): Promise<void> {

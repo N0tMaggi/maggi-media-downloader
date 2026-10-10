@@ -73,6 +73,7 @@ export interface DownloadRequest {
   kind: DownloadKind;
   media: ResolvedMedia;
   saveAs?: boolean;
+  itemIndex?: number;
 }
 
 export interface CacheEntry {

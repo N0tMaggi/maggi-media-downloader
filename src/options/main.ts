@@ -33,8 +33,8 @@ function render(): void {
     <div class="page">
       <main class="layout">
         <section class="hero">
-          <h1>TikTok Downloader Options</h1>
-          <p>Extension settings.</p>
+          <h1>Maggi Media Downloader Settings</h1>
+          <p>Configure defaults, file naming and platform preferences.</p>
           <p class="hint">${notice}</p>
         </section>
 

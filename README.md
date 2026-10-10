@@ -1,4 +1,4 @@
-# TikTok Downloader Extension
+# Maggi Media Downloader
 
 ![Hero Banner](./docs/hero-banner.svg)
 
@@ -11,28 +11,29 @@
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.9-2563EB?style=for-the-badge&logo=typescript&logoColor=white" />
   <img alt="Vite" src="https://img.shields.io/badge/Vite-5.4-7C3AED?style=for-the-badge&logo=vite&logoColor=white" />
   <img alt="Vitest" src="https://img.shields.io/badge/Vitest-2.1-16A34A?style=for-the-badge&logo=vitest&logoColor=white" />
+  <img alt="Platforms" src="https://img.shields.io/badge/Platforms-TikTok%20%7C%20X%20(Upcoming)-FE2C55?style=for-the-badge" />
   <img alt="License" src="https://img.shields.io/badge/License-MIT-F59E0B?style=for-the-badge" />
 </p>
 
-Chromium MV3 extension for resolving and downloading TikTok video, audio, and photo posts.
+Chromium MV3 multi-platform media downloader extension for TikTok and X (Twitter) with real-time video/photo interactive previews and typed background services.
 
 ## Overview
-- MV3 service worker with typed messages between content script, background, popup, and options.
-- TikTok post detection for direct URLs and feed/home views.
+- Modern interactive glassmorphic UI (HTML5 video player, photo slideshow gallery with thumbnail ribbon, soundtrack audio player with equalizer).
+- High-performance, low-overhead content detection for SPA feed navigation.
+- Platform support: TikTok (fully supported) & X/Twitter (roadmap integration ready).
 - Provider adapter for `api.maggi.dev`.
-- Cache, recent jobs, filename templates, and theme settings.
+- Cache, recent jobs, customizable filename templates, and theme settings.
 
 ## Visual Preview
 ![Popup Preview](./docs/popup-preview.svg)
 
 ## Feature Set
-- Detects TikTok posts from direct URLs and feed/home surfaces.
-- Resolves video, image-set, and audio metadata.
-- Downloads video, audio, and photos via `chrome.downloads`.
-- Stores settings, resolved-media cache, recent jobs, and page context in `chrome.storage.local`.
-- Applies `light`, `dark`, or `system` theme modes.
-- Shows an optional in-page quick action chip on TikTok pages.
-- Supports manual fallback URLs when no active TikTok post is detected.
+- **Interactive Previews**: Watch videos, browse photo carousel slides, and listen to audio soundtracks directly in the popup before downloading.
+- **Selective Downloads**: Download single slides from a photo set or batch-download all photos.
+- **Fast Content Detection**: Intercepts SPA history transitions with zero scroll lag.
+- **Flexible File Naming**: Configurable tokens `{author}`, `{id}`, `{type}`, `{index}`, `{title}`.
+- **Quick Settings**: Instant "Save As" toggle right inside the popup.
+- **Multi-Platform Support**: Built for TikTok with architecture ready for X (Twitter).
 
 ## Product Flow
 ```mermaid
@@ -103,7 +104,7 @@ flowchart TD
 
 ## Project Map
 ```text
-tiktok-download-extension/
+maggi-media-downloader/
 ├─ assets/
 │  └─ safe.png
 ├─ docs/

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "maggi.dev tiktok downloader",
-  "version": "2.0.0",
-  "description": "TikTok downloader extension with preview-first popup and configurable defaults.",
+  "name": "maggi.dev media downloader",
+  "version": "2.1.0",
+  "description": "High-performance media downloader for TikTok & X with interactive preview deck and configurable defaults.",
   "icons": {
     "128": "assets/safe.png"
   },
@@ -14,6 +14,8 @@
   ],
   "host_permissions": [
     "https://*.tiktok.com/*",
+    "https://*.x.com/*",
+    "https://*.twitter.com/*",
     "https://api.maggi.dev/*"
   ],
   "background": {

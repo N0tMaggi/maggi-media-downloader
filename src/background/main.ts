@@ -74,38 +74,46 @@ async function downloadAsset(
   return downloadId;
 }
 
-function selectAssetUrls(media: ResolvedMedia, kind: DownloadKind): string[] {
+function selectAssetUrls(
+  media: ResolvedMedia,
+  kind: DownloadKind,
+  itemIndex?: number,
+): { url: string; index?: number }[] {
   switch (kind) {
     case "audio":
-      return media.music?.url ? [media.music.url] : [];
+      return media.music?.url ? [{ url: media.music.url }] : [];
     case "images":
-      return media.images.map((image) => image.url);
+      if (typeof itemIndex === "number" && media.images[itemIndex]) {
+        return [{ url: media.images[itemIndex].url, index: itemIndex }];
+      }
+      return media.images.map((image, index) => ({ url: image.url, index }));
     default:
-      return media.video?.url ? [media.video.url] : [];
+      return media.video?.url ? [{ url: media.video.url }] : [];
   }
 }
 
 async function startDownloads(request: DownloadRequest) {
   const settings = await getSettings();
-  const urls = selectAssetUrls(request.media, request.kind);
-  if (!urls.length) {
+  const assets = selectAssetUrls(request.media, request.kind, request.itemIndex);
+  if (!assets.length) {
     throw new Error(`No ${request.kind} asset is available for this post.`);
   }
 
   const saveAs = request.saveAs ?? settings.defaultSaveAs[request.kind];
   const downloadIds: number[] = [];
 
-  for (let index = 0; index < urls.length; index += 1) {
+  for (const asset of assets) {
     const filename = buildDownloadFilename(
       settings.filenameTemplate,
       request.media,
       request.kind,
-      request.kind === "images" ? index : undefined,
+      asset.index,
     );
-    const downloadId = await downloadAsset(urls[index], filename, saveAs);
+    const downloadId = await downloadAsset(asset.url, filename, saveAs);
     downloadIds.push(downloadId);
   }
 
+  const primaryIndex = assets[0]?.index;
   await pushRecentJob({
     id: createJobId(),
     kind: request.kind,
@@ -113,7 +121,7 @@ async function startDownloads(request: DownloadRequest) {
       settings.filenameTemplate,
       request.media,
       request.kind,
-      request.kind === "images" ? 0 : undefined,
+      primaryIndex,
     ),
     sourceUrl: request.media.sourceUrl,
     createdAt: Date.now(),

@@ -135,8 +135,9 @@ button {
 }
 
 .primary {
-  color: #091109;
-  background: linear-gradient(135deg, #f6d365, #f15a29);
+  color: #0b0e14;
+  background: linear-gradient(135deg, #25f4ee, #fe2c55);
+  box-shadow: 0 4px 16px rgba(37, 244, 238, 0.25);
 }
 
 .secondary {

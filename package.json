@@ -1,9 +1,9 @@
 {
-  "name": "tiktok-download-extension",
-  "version": "2.0.0",
+  "name": "maggi-media-downloader",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
-  "description": "Chromium MV3 TikTok downloader extension with typed services and V2 UX",
+  "description": "Chromium MV3 media downloader extension for TikTok & X with interactive preview deck and typed services",
   "scripts": {
     "build": "vite build",
     "dev": "vite",
