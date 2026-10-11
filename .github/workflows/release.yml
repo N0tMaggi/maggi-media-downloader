@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag to create, e.g. v2.2.1 (leave empty to only build)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      # zip the contents of dist/ (manifest.json at the zip root) so it can be loaded unpacked right away
+      - name: Package
+        env:
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version || 'dev' }}
+        run: |
+          cd dist
+          zip -r "../maggi-media-downloader-${TAG}.zip" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: maggi-media-downloader
+          path: dist
+
+      - name: Create release
+        if: startsWith(github.ref, 'refs/tags/') || inputs.version != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
+        run: gh release create "$TAG" "maggi-media-downloader-${TAG}.zip" --target "${{ github.sha }}" --title "$TAG" --generate-notes
